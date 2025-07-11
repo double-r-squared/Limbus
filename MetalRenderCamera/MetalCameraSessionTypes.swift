@@ -22,6 +22,7 @@ public enum MetalCameraSessionState {
     case streaming
     case stopped
     case waiting
+    case capture
     case error
 }
 

@@ -12,6 +12,10 @@ import Metal
 internal final class CameraViewController: MTKViewController {
     var session: MetalCameraSession?
     
+    deinit {
+        print("OS Reclaiming Memory From CameraViewController")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         session = MetalCameraSession(frameOrientation: .portrait, delegate: self)

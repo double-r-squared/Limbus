@@ -3,10 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E823614F2E1F8FEE00C499E0 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E823614E2E1F8FEE00C499E0 /* Shaders.metal */; };
+		E82361532E1F93F700C499E0 /* MTKViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82361522E1F93F700C499E0 /* MTKViewController.swift */; };
+		E82361592E203CBC00C499E0 /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82361582E203CBC00C499E0 /* MenuViewController.swift */; };
+		E823622C2E206D8800C499E0 /* CaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E823622B2E206D8800C499E0 /* CaptureService.swift */; };
 		FA00A6B21CD54552005CF485 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6B11CD54552005CF485 /* AppDelegate.swift */; };
 		FA00A6B71CD54552005CF485 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FA00A6B51CD54552005CF485 /* Main.storyboard */; };
 		FA00A6B91CD54552005CF485 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA00A6B81CD54552005CF485 /* Assets.xcassets */; };
@@ -14,8 +18,6 @@
 		FA00A6CB1CD545F4005CF485 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6C51CD545F4005CF485 /* CameraViewController.swift */; };
 		FA00A6CC1CD545F4005CF485 /* MetalCameraSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6C61CD545F4005CF485 /* MetalCameraSession.swift */; };
 		FA00A6CD1CD545F4005CF485 /* MetalCameraSessionTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6C71CD545F4005CF485 /* MetalCameraSessionTypes.swift */; };
-		FA00A6CE1CD545F4005CF485 /* MTKViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6C81CD545F4005CF485 /* MTKViewController.swift */; };
-		FA00A6CF1CD545F4005CF485 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6C91CD545F4005CF485 /* Shaders.metal */; };
 		FABBE88B1D491220006D3416 /* MetalCameraSessionTestsDelegates.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABBE8891D4911EE006D3416 /* MetalCameraSessionTestsDelegates.swift */; };
 		FABC1DE91D46296C00F0B64B /* MetalCameraCaptureDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABC1DE81D46296C00F0B64B /* MetalCameraCaptureDevice.swift */; };
 		FABC1DFC1D46373A00F0B64B /* MetalCameraSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABC1DFB1D46373A00F0B64B /* MetalCameraSessionTests.swift */; };
@@ -32,6 +34,18 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		E823614E2E1F8FEE00C499E0 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		E82361522E1F93F700C499E0 /* MTKViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTKViewController.swift; sourceTree = "<group>"; };
+		E82361582E203CBC00C499E0 /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
+		E82361AA2E204B2300C499E0 /* PhotoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCapture.swift; sourceTree = "<group>"; };
+		E82361AC2E204B2300C499E0 /* DeviceLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceLookup.swift; sourceTree = "<group>"; };
+		E82361B02E204B4100C499E0 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
+		E82361B12E204B4100C499E0 /* DataTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTypes.swift; sourceTree = "<group>"; };
+		E82361B22E204B4100C499E0 /* MediaLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaLibrary.swift; sourceTree = "<group>"; };
+		E82361B32E204B4100C499E0 /* AVCamCaptureIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVCamCaptureIntent.swift; sourceTree = "<group>"; };
+		E82361B52E204B4100C499E0 /* CameraState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraState.swift; sourceTree = "<group>"; };
+		E82361B72E204BC100C499E0 /* CameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraModel.swift; sourceTree = "<group>"; };
+		E823622B2E206D8800C499E0 /* CaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureService.swift; sourceTree = "<group>"; };
 		FA00A6AE1CD54552005CF485 /* Metal Camera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Metal Camera.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA00A6B11CD54552005CF485 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		FA00A6B61CD54552005CF485 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -41,14 +55,16 @@
 		FA00A6C51CD545F4005CF485 /* CameraViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		FA00A6C61CD545F4005CF485 /* MetalCameraSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalCameraSession.swift; sourceTree = "<group>"; };
 		FA00A6C71CD545F4005CF485 /* MetalCameraSessionTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalCameraSessionTypes.swift; sourceTree = "<group>"; };
-		FA00A6C81CD545F4005CF485 /* MTKViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MTKViewController.swift; sourceTree = "<group>"; };
-		FA00A6C91CD545F4005CF485 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		FABBE8891D4911EE006D3416 /* MetalCameraSessionTestsDelegates.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalCameraSessionTestsDelegates.swift; sourceTree = "<group>"; };
 		FABC1DE81D46296C00F0B64B /* MetalCameraCaptureDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalCameraCaptureDevice.swift; sourceTree = "<group>"; };
 		FABC1DF01D4636D500F0B64B /* MetalRenderCameraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MetalRenderCameraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FABC1DF41D4636D500F0B64B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FABC1DFB1D46373A00F0B64B /* MetalCameraSessionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalCameraSessionTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E823614D2E1F8F6500C499E0 /* Process */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Process; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		FA00A6AB1CD54552005CF485 /* Frameworks */ = {
@@ -68,6 +84,35 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E82361AE2E204B2300C499E0 /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				E82361AA2E204B2300C499E0 /* PhotoCapture.swift */,
+				E82361AC2E204B2300C499E0 /* DeviceLookup.swift */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		E82361B42E204B4100C499E0 /* Intent */ = {
+			isa = PBXGroup;
+			children = (
+				E82361B32E204B4100C499E0 /* AVCamCaptureIntent.swift */,
+			);
+			path = Intent;
+			sourceTree = "<group>";
+		};
+		E82361B62E204B4100C499E0 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				E82361B02E204B4100C499E0 /* Camera.swift */,
+				E82361B12E204B4100C499E0 /* DataTypes.swift */,
+				E82361B22E204B4100C499E0 /* MediaLibrary.swift */,
+				E82361B42E204B4100C499E0 /* Intent */,
+				E82361B52E204B4100C499E0 /* CameraState.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
 		FA00A6A51CD54552005CF485 = {
 			isa = PBXGroup;
 			children = (
@@ -89,9 +134,15 @@
 		FA00A6B01CD54552005CF485 /* MetalRenderCamera */ = {
 			isa = PBXGroup;
 			children = (
-				FA00A6D11CD54611005CF485 /* Metal Camera Session */,
-				FA00A6D01CD545FE005CF485 /* MetalKit View Controller */,
+				E82361B62E204B4100C499E0 /* Model */,
+				E82361AE2E204B2300C499E0 /* Capture */,
+				E82361B72E204BC100C499E0 /* CameraModel.swift */,
+				E823622B2E206D8800C499E0 /* CaptureService.swift */,
+				E823614D2E1F8F6500C499E0 /* Process */,
+				FA00A6D11CD54611005CF485 /* Preview */,
+				FA00A6D01CD545FE005CF485 /* PreView Controller */,
 				FA00A6C51CD545F4005CF485 /* CameraViewController.swift */,
+				E82361582E203CBC00C499E0 /* MenuViewController.swift */,
 				FA00A6B11CD54552005CF485 /* AppDelegate.swift */,
 				FA00A6C31CD545DE005CF485 /* Resources */,
 				FA00A6BD1CD54552005CF485 /* Info.plist */,
@@ -109,23 +160,23 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		FA00A6D01CD545FE005CF485 /* MetalKit View Controller */ = {
+		FA00A6D01CD545FE005CF485 /* PreView Controller */ = {
 			isa = PBXGroup;
 			children = (
-				FA00A6C81CD545F4005CF485 /* MTKViewController.swift */,
-				FA00A6C91CD545F4005CF485 /* Shaders.metal */,
+				E823614E2E1F8FEE00C499E0 /* Shaders.metal */,
+				E82361522E1F93F700C499E0 /* MTKViewController.swift */,
 			);
-			name = "MetalKit View Controller";
+			name = "PreView Controller";
 			sourceTree = "<group>";
 		};
-		FA00A6D11CD54611005CF485 /* Metal Camera Session */ = {
+		FA00A6D11CD54611005CF485 /* Preview */ = {
 			isa = PBXGroup;
 			children = (
 				FA00A6C61CD545F4005CF485 /* MetalCameraSession.swift */,
 				FA00A6C71CD545F4005CF485 /* MetalCameraSessionTypes.swift */,
 				FABC1DE81D46296C00F0B64B /* MetalCameraCaptureDevice.swift */,
 			);
-			name = "Metal Camera Session";
+			name = Preview;
 			sourceTree = "<group>";
 		};
 		FABC1DF11D4636D500F0B64B /* MetalRenderCameraTests */ = {
@@ -153,6 +204,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E823614D2E1F8F6500C499E0 /* Process */,
 			);
 			name = "Metal Camera";
 			productName = MetalRenderCamera;
@@ -244,12 +298,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				FABC1DE91D46296C00F0B64B /* MetalCameraCaptureDevice.swift in Sources */,
-				FA00A6CF1CD545F4005CF485 /* Shaders.metal in Sources */,
 				FA00A6CD1CD545F4005CF485 /* MetalCameraSessionTypes.swift in Sources */,
+				E823622C2E206D8800C499E0 /* CaptureService.swift in Sources */,
+				E82361532E1F93F700C499E0 /* MTKViewController.swift in Sources */,
+				E82361592E203CBC00C499E0 /* MenuViewController.swift in Sources */,
 				FA00A6B21CD54552005CF485 /* AppDelegate.swift in Sources */,
 				FA00A6CB1CD545F4005CF485 /* CameraViewController.swift in Sources */,
 				FA00A6CC1CD545F4005CF485 /* MetalCameraSession.swift in Sources */,
-				FA00A6CE1CD545F4005CF485 /* MTKViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,6 +312,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E823614F2E1F8FEE00C499E0 /* Shaders.metal in Sources */,
 				FABBE88B1D491220006D3416 /* MetalCameraSessionTestsDelegates.swift in Sources */,
 				FABC1DFC1D46373A00F0B64B /* MetalCameraSessionTests.swift in Sources */,
 			);
@@ -410,16 +466,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = JTKK646U9Z;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3LHJDLG87Z;
 				INFOPLIST_FILE = MetalRenderCamera/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.rationalmatter.MetalRenderCamera;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rationalmatter.MetalRenderCamera1234;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 			};
@@ -430,16 +488,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = JTKK646U9Z;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3LHJDLG87Z;
 				INFOPLIST_FILE = MetalRenderCamera/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.rationalmatter.MetalRenderCamera;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rationalmatter.MetalRenderCamera1234;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 			};

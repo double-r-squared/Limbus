@@ -170,6 +170,19 @@ public final class MetalCameraSession: NSObject {
             captureSession.addOutput(outputData)
         }
     }
+    
+    /// Current photo capture output stream.
+    internal var photoOutput: AVCapturePhotoOutput? {
+        didSet {
+            if let oldValue = oldValue {
+                captureSession.removeOutput(oldValue)
+            }
+
+            guard let photoOutput = photoOutput else { return }
+            
+            captureSession.addOutput(photoOutput)
+        }
+    }
 
     /**
      Requests access to camera hardware.
@@ -237,14 +250,16 @@ public final class MetalCameraSession: NSObject {
         self.inputDevice = captureInput
     }
     
+    
+    
     /**
      Initializes capture output data stream.
      
      - throws: `MetalCameraSessionError` if we failed to initialize and add output data stream.
      */
     fileprivate func initializeOutputData() throws {
+        // Initialize video output (existing code)
         let outputData = AVCaptureVideoDataOutput()
-
         outputData.videoSettings = [
             kCVPixelBufferPixelFormatTypeKey as String: Int(pixelFormat.coreVideoType)
         ]
@@ -257,12 +272,26 @@ public final class MetalCameraSession: NSObject {
         
         self.outputData = outputData
 
-        // Set the video orientation
+        // Initialize photo output
+        let photoOutput = AVCapturePhotoOutput()
+        guard captureSession.canAddOutput(photoOutput) else {
+            throw MetalCameraSessionError.failedToAddCaptureOutput
+        }
+        
+        self.photoOutput = photoOutput
+
+        // Set the video orientation (existing code)
         if let frameOrientation = frameOrientation,
            let videoConnection = outputData.connection(with: .video),
-           videoConnection.isVideoOrientationSupported
-        {
+           videoConnection.isVideoOrientationSupported {
             videoConnection.videoOrientation = frameOrientation
+        }
+        
+        // Also set orientation for photo output
+        if let frameOrientation = frameOrientation,
+           let photoConnection = photoOutput.connection(with: .video),
+           photoConnection.isVideoOrientationSupported {
+            photoConnection.videoOrientation = frameOrientation
         }
     }
     
@@ -312,7 +341,8 @@ extension MetalCameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         let width = isPlanar ? CVPixelBufferGetWidthOfPlane(imageBuffer, planeIndex) : CVPixelBufferGetWidth(imageBuffer)
         let height = isPlanar ? CVPixelBufferGetHeightOfPlane(imageBuffer, planeIndex) : CVPixelBufferGetHeight(imageBuffer)
         
-        var imageTexture: CVMetalTexture?
+        // MARK: THIS IS IT !!!!!!
+        weak var imageTexture: CVMetalTexture?
         
         let result = CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, textureCache, imageBuffer, nil, pixelFormat, width, height, planeIndex, &imageTexture)
 
