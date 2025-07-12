@@ -278,12 +278,12 @@ extension MTKViewController: MTKViewDelegate {
                 DispatchQueue.main.async {
                     self.brightness = brightness
                     // Navigate to different view
-                    //let darkViewController = ProcessViewController() // Replace with your actual view controller
-                    //darkViewController.modalPresentationStyle = .fullScreen // Or your preferred style
+                    let darkViewController = ProcessViewController() // Replace with your actual view controller
+                    darkViewController.modalPresentationStyle = .fullScreen // Or your preferred style
                     
                     // Check if we can present (in case we're already presenting something)
                     if self.presentedViewController == nil {
-                        //self.present(darkViewController, animated: true)
+                        self.present(darkViewController, animated: true)
                     } else {
                         print("⚠️ Couldn't present dark view - already presenting another view")
                     }

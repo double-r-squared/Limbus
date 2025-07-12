@@ -24,9 +24,6 @@ class ProcessViewController: UIViewController {
     
     
     
-    
-    
-    
     internal class PreProcessing {
         
         // Helps reduce dimensionality speed up processing

@@ -9,8 +9,10 @@
 /* Begin PBXBuildFile section */
 		E823614F2E1F8FEE00C499E0 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = E823614E2E1F8FEE00C499E0 /* Shaders.metal */; };
 		E82361532E1F93F700C499E0 /* MTKViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82361522E1F93F700C499E0 /* MTKViewController.swift */; };
-		E82361592E203CBC00C499E0 /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82361582E203CBC00C499E0 /* MenuViewController.swift */; };
-		E823622C2E206D8800C499E0 /* CaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E823622B2E206D8800C499E0 /* CaptureService.swift */; };
+		E82361592E203CBC00C499E0 /* DashboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82361582E203CBC00C499E0 /* DashboardViewController.swift */; };
+		E82361F42E2056C400C499E0 /* ProcessViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82361F22E2056C400C499E0 /* ProcessViewController.swift */; };
+		E82362352E21D2F400C499E0 /* PatientViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82362342E21D2F400C499E0 /* PatientViewController.swift */; };
+		E82362422E21E60100C499E0 /* Patient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82362412E21E60100C499E0 /* Patient.swift */; };
 		FA00A6B21CD54552005CF485 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00A6B11CD54552005CF485 /* AppDelegate.swift */; };
 		FA00A6B71CD54552005CF485 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FA00A6B51CD54552005CF485 /* Main.storyboard */; };
 		FA00A6B91CD54552005CF485 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA00A6B81CD54552005CF485 /* Assets.xcassets */; };
@@ -36,7 +38,7 @@
 /* Begin PBXFileReference section */
 		E823614E2E1F8FEE00C499E0 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		E82361522E1F93F700C499E0 /* MTKViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTKViewController.swift; sourceTree = "<group>"; };
-		E82361582E203CBC00C499E0 /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
+		E82361582E203CBC00C499E0 /* DashboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewController.swift; sourceTree = "<group>"; };
 		E82361AA2E204B2300C499E0 /* PhotoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCapture.swift; sourceTree = "<group>"; };
 		E82361AC2E204B2300C499E0 /* DeviceLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceLookup.swift; sourceTree = "<group>"; };
 		E82361B02E204B4100C499E0 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
@@ -45,7 +47,9 @@
 		E82361B32E204B4100C499E0 /* AVCamCaptureIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVCamCaptureIntent.swift; sourceTree = "<group>"; };
 		E82361B52E204B4100C499E0 /* CameraState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraState.swift; sourceTree = "<group>"; };
 		E82361B72E204BC100C499E0 /* CameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraModel.swift; sourceTree = "<group>"; };
-		E823622B2E206D8800C499E0 /* CaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureService.swift; sourceTree = "<group>"; };
+		E82361F22E2056C400C499E0 /* ProcessViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessViewController.swift; sourceTree = "<group>"; };
+		E82362342E21D2F400C499E0 /* PatientViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientViewController.swift; sourceTree = "<group>"; };
+		E82362412E21E60100C499E0 /* Patient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Patient.swift; sourceTree = "<group>"; };
 		FA00A6AE1CD54552005CF485 /* Metal Camera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Metal Camera.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA00A6B11CD54552005CF485 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		FA00A6B61CD54552005CF485 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -137,12 +141,14 @@
 				E82361B62E204B4100C499E0 /* Model */,
 				E82361AE2E204B2300C499E0 /* Capture */,
 				E82361B72E204BC100C499E0 /* CameraModel.swift */,
-				E823622B2E206D8800C499E0 /* CaptureService.swift */,
 				E823614D2E1F8F6500C499E0 /* Process */,
-				FA00A6D11CD54611005CF485 /* Preview */,
-				FA00A6D01CD545FE005CF485 /* PreView Controller */,
+				FA00A6D11CD54611005CF485 /* Metal Camera Session */,
+				FA00A6D01CD545FE005CF485 /* Metal Camera View */,
+				E82362342E21D2F400C499E0 /* PatientViewController.swift */,
+				E82361F22E2056C400C499E0 /* ProcessViewController.swift */,
 				FA00A6C51CD545F4005CF485 /* CameraViewController.swift */,
-				E82361582E203CBC00C499E0 /* MenuViewController.swift */,
+				E82361582E203CBC00C499E0 /* DashboardViewController.swift */,
+				E82362412E21E60100C499E0 /* Patient.swift */,
 				FA00A6B11CD54552005CF485 /* AppDelegate.swift */,
 				FA00A6C31CD545DE005CF485 /* Resources */,
 				FA00A6BD1CD54552005CF485 /* Info.plist */,
@@ -160,23 +166,23 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		FA00A6D01CD545FE005CF485 /* PreView Controller */ = {
+		FA00A6D01CD545FE005CF485 /* Metal Camera View */ = {
 			isa = PBXGroup;
 			children = (
 				E823614E2E1F8FEE00C499E0 /* Shaders.metal */,
 				E82361522E1F93F700C499E0 /* MTKViewController.swift */,
 			);
-			name = "PreView Controller";
+			name = "Metal Camera View";
 			sourceTree = "<group>";
 		};
-		FA00A6D11CD54611005CF485 /* Preview */ = {
+		FA00A6D11CD54611005CF485 /* Metal Camera Session */ = {
 			isa = PBXGroup;
 			children = (
 				FA00A6C61CD545F4005CF485 /* MetalCameraSession.swift */,
 				FA00A6C71CD545F4005CF485 /* MetalCameraSessionTypes.swift */,
 				FABC1DE81D46296C00F0B64B /* MetalCameraCaptureDevice.swift */,
 			);
-			name = Preview;
+			name = "Metal Camera Session";
 			sourceTree = "<group>";
 		};
 		FABC1DF11D4636D500F0B64B /* MetalRenderCameraTests */ = {
@@ -244,7 +250,7 @@
 				TargetAttributes = {
 					FA00A6AD1CD54552005CF485 = {
 						CreatedOnToolsVersion = 7.3;
-						LastSwiftMigration = 0900;
+						LastSwiftMigration = 1640;
 					};
 					FABC1DEF1D4636D500F0B64B = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -299,9 +305,11 @@
 			files = (
 				FABC1DE91D46296C00F0B64B /* MetalCameraCaptureDevice.swift in Sources */,
 				FA00A6CD1CD545F4005CF485 /* MetalCameraSessionTypes.swift in Sources */,
-				E823622C2E206D8800C499E0 /* CaptureService.swift in Sources */,
 				E82361532E1F93F700C499E0 /* MTKViewController.swift in Sources */,
-				E82361592E203CBC00C499E0 /* MenuViewController.swift in Sources */,
+				E82361F42E2056C400C499E0 /* ProcessViewController.swift in Sources */,
+				E82362352E21D2F400C499E0 /* PatientViewController.swift in Sources */,
+				E82362422E21E60100C499E0 /* Patient.swift in Sources */,
+				E82361592E203CBC00C499E0 /* DashboardViewController.swift in Sources */,
 				FA00A6B21CD54552005CF485 /* AppDelegate.swift in Sources */,
 				FA00A6CB1CD545F4005CF485 /* CameraViewController.swift in Sources */,
 				FA00A6CC1CD545F4005CF485 /* MetalCameraSession.swift in Sources */,
@@ -466,6 +474,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3LHJDLG87Z;
@@ -475,9 +484,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.rationalmatter.MetalRenderCamera1234;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.Limbus;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 			};
@@ -488,6 +499,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3LHJDLG87Z;
@@ -497,9 +509,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.rationalmatter.MetalRenderCamera1234;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.Limbus;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 			};

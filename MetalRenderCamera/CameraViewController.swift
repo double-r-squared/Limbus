@@ -47,8 +47,47 @@ extension CameraViewController: MetalCameraSessionDelegate {
             break
         }
         DispatchQueue.main.async { 
-            self.title = "Metal camera: \(state)"
+            NSLog("Metal camera: \(state)")
         }
         NSLog("Session changed state to \(state) with error: \(error?.localizedDescription ?? "None").")
     }
+    
+    
+    //Reads the Calibration score to user for extra feedback
+    func calibrationScore(_ session: MetalCameraSession, didReceiveFrameAsTextures textures: [MTLTexture], withTimestamp timestamp: Double) {
+        self.brightness = brightness
+        print("Brightness: \(brightness)")
+        
+        DispatchQueue.main.async {
+            self.title = "Metal camera: \(self.brightness)"
+        }
+    }
+    
+    func NavigationController(_ session: MetalCameraSession, didReceiveFrameAsTextures textures: [MTLTexture], withTimestamp timestamp: Double) {
+        if self.brightness > 0.5 {
+            
+            //Capture
+            print("Image Captured")
+            
+            //load into temp storage for Decision
+            
+            capturedPhotoPreview()
+        }
+    }
+    
+    func capturedPhotoPreview() {
+        
+        //load info from storage
+        //modal like image picker
+    }
+    
+    
+    //Image Capturing stuff
+    
+    
+    //Exit
+    func navigateToProcessView(){
+        
+    }
+    
 }
