@@ -110,4 +110,3 @@ kernel void analyzeCenterRegion(
 
     resultBuffer[0] = count > 0 ? (sum / float(count)) : 0.0;
 }
-

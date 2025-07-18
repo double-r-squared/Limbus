@@ -22,9 +22,11 @@ open class MTKViewController: UIViewController {
     
     /// Metal texture to be drawn whenever the view controller is asked to render its view. Please note that if you set this `var` too frequently some of the textures may not being drawn, as setting a texture does not force the view controller's view to render its content.
 
-
-    // MAKE THIS WEAK TO NOT RETAIN
     open var texture: MTLTexture?
+    
+    // MARK: Capture Variables
+    public var onFrameCaptured: ((MTLTexture, Float) -> Void)?
+    private var lastCaptureTime: Date = .distantPast
     
     /**
      This method is called prior rendering view's content. Use `inout` `texture` parameter to update the texture that is about to be drawn.
@@ -268,29 +270,19 @@ extension MTKViewController: MTKViewDelegate {
 
         commandBuffer.addCompletedHandler { [weak self] _ in
             guard let self = self else { return }
-            let resultPointer = self.analysisBuffer.contents().assumingMemoryBound(to: Float.self)
-            let brightness = resultPointer[0]
-            print("brightness: \(brightness)")
+            let brightness = self.analysisBuffer.contents()
+                              .assumingMemoryBound(to: Float.self)[0]
             
-            if brightness < 0.001 {
-                print("⚠️ Low brightness detected: \(brightness) - navigating to dark view")
+            DispatchQueue.main.async {
+                self.brightness = brightness
                 
-                DispatchQueue.main.async {
-                    self.brightness = brightness
-                    // Navigate to different view
-                    let darkViewController = ProcessViewController() // Replace with your actual view controller
-                    darkViewController.modalPresentationStyle = .fullScreen // Or your preferred style
+                // Simple capture logic (brightness between 0.4-0.6)
+                if 0.25 > brightness,
+                   Date().timeIntervalSince(self.lastCaptureTime) > 1.0,
+                   let texture = self.texture {
                     
-                    // Check if we can present (in case we're already presenting something)
-                    if self.presentedViewController == nil {
-                        self.present(darkViewController, animated: true)
-                    } else {
-                        print("⚠️ Couldn't present dark view - already presenting another view")
-                    }
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.brightness = brightness
+                    self.lastCaptureTime = Date()
+                    self.onFrameCaptured?(texture, brightness)
                 }
             }
         }
