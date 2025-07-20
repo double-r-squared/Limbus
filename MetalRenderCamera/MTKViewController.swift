@@ -26,6 +26,7 @@ open class MTKViewController: UIViewController {
     
     // MARK: Capture Variables
     public var onFrameCaptured: ((MTLTexture, Float) -> Void)?
+    
     private var lastCaptureTime: Date = .distantPast
     
     /**
@@ -277,7 +278,7 @@ extension MTKViewController: MTKViewDelegate {
                 self.brightness = brightness
                 
                 // Simple capture logic (brightness between 0.4-0.6)
-                if 0.25 > brightness,
+                if 0.15 > brightness,
                    Date().timeIntervalSince(self.lastCaptureTime) > 1.0,
                    let texture = self.texture {
                     

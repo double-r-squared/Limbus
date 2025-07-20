@@ -13,6 +13,7 @@ import SwiftUI
 internal final class CameraViewController: MTKViewController {
     var session: MetalCameraSession?
     var patient: Patient?
+    var eyeType: EyeType?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,9 +25,32 @@ internal final class CameraViewController: MTKViewController {
             processVC.patient = self?.patient
             
             // Add a callback for when save is pressed
-            processVC.onSave = { [weak self] (patient, image) in
-                self?.navigateToPatientDetail(patient: patient, image: image)
+            processVC.onSave = { [weak self] patient, image, eyeType, brightness in
+                var updatedPatient = patient
+
+                if updatedPatient.eyeData == nil {
+                    updatedPatient.eyeData = EyeData()
+                }
+
+                switch eyeType {
+                case .left:
+                    updatedPatient.eyeData?.leftEyeImage = image
+                    updatedPatient.eyeData?.leftEyeScore = brightness
+                    updatedPatient.eyeData?.leftEyeTimestamp = Date()
+                    print("Saved left eye data for \(updatedPatient.firstName)")
+
+                case .right:
+                    updatedPatient.eyeData?.rightEyeImage = image
+                    updatedPatient.eyeData?.rightEyeScore = brightness
+                    updatedPatient.eyeData?.rightEyeTimestamp = Date()
+                    print("Saved right eye data for \(updatedPatient.firstName)")
+                }
+
+                DispatchQueue.main.async {
+                    self?.navigateToPatientDetail(patient: updatedPatient, image: image, eyeType: eyeType)
+                }
             }
+
             
             self?.present(processVC, animated: true)
         }
@@ -43,10 +67,10 @@ internal final class CameraViewController: MTKViewController {
         session?.stop()
     }
     
-    private func navigateToPatientDetail(patient: Patient, image: UIImage) {
+    private func navigateToPatientDetail(patient: Patient, image: UIImage, eyeType: EyeType) {
         session?.stop()
         
-        let swiftUIView = PatientDetailView(patient: patient, image: image)
+        let swiftUIView = PatientDetailView(patient: patient, image: image, eyeType: eyeType)
         let hostingVC = UIHostingController(rootView: swiftUIView)
         let nav = UINavigationController(rootViewController: hostingVC)
         
@@ -64,7 +88,7 @@ extension CameraViewController: MetalCameraSessionDelegate {
     func metalCameraSession(_ session: MetalCameraSession, didReceiveFrameAsTextures textures: [MTLTexture], withTimestamp timestamp: Double) {
         self.texture = textures[0]
         DispatchQueue.main.async {
-            self.title = "Score: \(self.brightness)% , Patient: \(self.patient?.firstName ?? "Unknown")"
+            self.title = "Patient: \(self.patient?.firstName ?? "Unknown")"
         }
     }
     

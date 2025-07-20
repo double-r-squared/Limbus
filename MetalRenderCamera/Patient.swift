@@ -16,13 +16,40 @@ struct Patient {
     var phone: String?
     var address: String?
     
-    // Eye data would be added later
     var eyeData: EyeData?
 }
 
+
+// Incorporate EyeType here Maybe?
+
 struct EyeData {
-    // Will be implemented later
+    var leftEyeImage: UIImage?
+    var rightEyeImage: UIImage?
+    var leftEyeScore: Float?
+    var rightEyeScore: Float?
+    var leftEyeTimestamp: Date?
+    var rightEyeTimestamp: Date?
+    
+    init() {
+        // Initialize with nil values
+    }
 }
+
+
+
+// Unnesessary SLOP
+
+enum EyeType: String, CaseIterable {
+    case left = "Left Eye"
+    case right = "Right Eye"
+    
+    var displayName: String {
+        return rawValue
+    }
+}
+
+
+
 
 class PatientFormViewController: UIViewController {
     

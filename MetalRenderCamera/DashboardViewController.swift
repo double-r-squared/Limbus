@@ -50,6 +50,11 @@ class DashboardViewController: UIViewController, UITableViewDataSource, UITableV
         print("PRESSED COMPOSITE BUTTON")
     }
     
+    
+    // MARK: - SearchBar
+    
+    @IBOutlet weak var patientSearchBar: UISearchBar!
+    
     // MARK: - Table View Data Source
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
