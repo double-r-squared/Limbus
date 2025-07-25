@@ -7,12 +7,14 @@
 //
 import UIKit
 import SwiftUI
+import Metal
 
 class ProcessViewController: UIViewController {
     var capturedTexture: MTLTexture?
     var capturedImage: UIImage?
     var capturedBrightness: Float?
     var patient: Patient?
+    var eyeType: EyeType? // Pre-selected eye from CameraViewController
     var onSave: ((Patient, UIImage, EyeType, Float) -> Void)?
     
     private let imageView = UIImageView()
@@ -22,11 +24,15 @@ class ProcessViewController: UIViewController {
     private let eyeSelectionLabel = UILabel()
     private let buttonStack = UIStackView()
     
-    private var selectedEye: EyeType? = nil
+    private var selectedEye: EyeType? // Initialized with eyeType, can be overridden
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        
+        // Initialize selectedEye with the passed eyeType
+        selectedEye = eyeType
+        
         setupImageView()
         setupScoreLabel()
         setupEyeSelection()
@@ -35,8 +41,8 @@ class ProcessViewController: UIViewController {
     }
     
     private func setupImageView() {
-        imageView.contentMode = .scaleAspectFill // Changed to fill for proper clipping
-        imageView.clipsToBounds = true // Enable clipping
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
         
         if let texture = capturedTexture {
             capturedImage = texture.toUIImage()
@@ -47,10 +53,8 @@ class ProcessViewController: UIViewController {
                 height: view.bounds.height
             )
             
-            // Calculate square size based on the smaller dimension
             let squareSize = min(imageSize.width, imageSize.height)
             
-            // Set frame to square dimensions
             imageView.frame = CGRect(
                 origin: CGPoint(
                     x: (view.bounds.width - squareSize) / 2,
@@ -59,7 +63,6 @@ class ProcessViewController: UIViewController {
                 size: CGSize(width: squareSize, height: squareSize)
             )
             
-            // Make it a perfect square with rounded corners (optional)
             imageView.layer.cornerRadius = 8
         }
         view.addSubview(imageView)
@@ -72,7 +75,7 @@ class ProcessViewController: UIViewController {
         scoreLabel.textColor = .label
         scoreLabel.frame = CGRect(
             x: 20,
-            y: imageView.frame.maxY - 40, // in the image at bottom
+            y: imageView.frame.maxY - 40,
             width: view.bounds.width - 40,
             height: 30
         )
@@ -80,7 +83,6 @@ class ProcessViewController: UIViewController {
     }
     
     private func setupEyeSelection() {
-        // Container view for eye selection
         eyeSelectionView.backgroundColor = .secondarySystemBackground
         eyeSelectionView.layer.cornerRadius = 12
         eyeSelectionView.frame = CGRect(
@@ -91,8 +93,7 @@ class ProcessViewController: UIViewController {
         )
         view.addSubview(eyeSelectionView)
         
-        // Label
-        eyeSelectionLabel.text = "Select Eye:"
+        eyeSelectionLabel.text = "Selected Eye:"
         eyeSelectionLabel.font = .systemFont(ofSize: 18, weight: .medium)
         eyeSelectionLabel.textColor = .label
         eyeSelectionLabel.frame = CGRect(
@@ -103,8 +104,6 @@ class ProcessViewController: UIViewController {
         )
         eyeSelectionView.addSubview(eyeSelectionLabel)
         
-        // Segmented control
-        eyeSegmentedControl.selectedSegmentIndex = -1 // No selection initially
         eyeSegmentedControl.backgroundColor = .systemBackground
         eyeSegmentedControl.selectedSegmentTintColor = .systemBlue
         eyeSegmentedControl.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
@@ -115,6 +114,14 @@ class ProcessViewController: UIViewController {
             width: eyeSelectionView.bounds.width - 32,
             height: 28
         )
+        
+        // Set the segmented control to reflect the pre-selected eyeType
+        if let eyeType = eyeType, let index = EyeType.allCases.firstIndex(of: eyeType) {
+            eyeSegmentedControl.selectedSegmentIndex = index
+        } else {
+            eyeSegmentedControl.selectedSegmentIndex = -1 // No selection if eyeType is nil
+        }
+        
         eyeSelectionView.addSubview(eyeSegmentedControl)
     }
     
@@ -162,13 +169,16 @@ class ProcessViewController: UIViewController {
     private func logDiagnosticInfo() {
         print("Received Score: \(capturedBrightness ?? 0)")
         print("Current Patient: \(patient?.firstName ?? "Unknown")")
+        print("Pre-selected Eye: \(eyeType?.displayName ?? "None")")
     }
     
     @objc private func eyeSelectionChanged() {
         let selectedIndex = eyeSegmentedControl.selectedSegmentIndex
         if selectedIndex >= 0 && selectedIndex < EyeType.allCases.count {
             selectedEye = EyeType.allCases[selectedIndex]
-            print("Selected eye: \(selectedEye?.displayName ?? "None")")
+            print("Overridden eye: \(selectedEye?.displayName ?? "None")")
+        } else {
+            selectedEye = eyeType // Revert to pre-selected if deselected
         }
     }
     
@@ -177,7 +187,6 @@ class ProcessViewController: UIViewController {
     }
     
     @objc private func save() {
-        // Check if eye is selected
         guard let selectedEye = selectedEye else {
             showEyeSelectionAlert()
             return
@@ -190,9 +199,7 @@ class ProcessViewController: UIViewController {
             return
         }
         
-        // Dismiss this view controller first
         dismiss(animated: true) { [weak self] in
-            // Call the callback with eye type and brightness
             self?.onSave?(patient, image, selectedEye, brightness)
         }
     }
@@ -205,7 +212,6 @@ class ProcessViewController: UIViewController {
         )
         
         alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            // Optionally highlight the eye selection area
             self?.highlightEyeSelection()
         })
         
@@ -213,7 +219,6 @@ class ProcessViewController: UIViewController {
     }
     
     private func highlightEyeSelection() {
-        // Add a subtle animation to draw attention to the eye selection
         UIView.animate(withDuration: 0.3, animations: {
             self.eyeSelectionView.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
             self.eyeSelectionView.backgroundColor = .systemBlue.withAlphaComponent(0.1)
@@ -236,21 +241,21 @@ extension MTLTexture {
         
         var data = [UInt8](repeating: 0, count: width * height * bytesPerPixel)
         self.getBytes(&data,
-                     bytesPerRow: bytesPerRow,
-                     from: MTLRegionMake2D(0, 0, width, height),
-                     mipmapLevel: 0)
+                      bytesPerRow: bytesPerRow,
+                      from: MTLRegionMake2D(0, 0, width, height),
+                      mipmapLevel: 0)
         
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue |
                          CGImageAlphaInfo.premultipliedFirst.rawValue
         
         guard let context = CGContext(data: &data,
-                                    width: width,
-                                    height: height,
-                                    bitsPerComponent: 8,
-                                    bytesPerRow: bytesPerRow,
-                                    space: colorSpace,
-                                    bitmapInfo: bitmapInfo),
+                                     width: width,
+                                     height: height,
+                                     bitsPerComponent: 8,
+                                     bytesPerRow: bytesPerRow,
+                                     space: colorSpace,
+                                     bitmapInfo: bitmapInfo),
               let cgImage = context.makeImage() else {
             return nil
         }

@@ -8,8 +8,38 @@
 
 import SwiftUI
 import CoreGraphics
+import Charts
 
 extension PatientDetailView {
+    
+    func processImageAndZernikeMap() {
+        isProcessing = true
+        isGeneratingZernike = true
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            let startTime = Date()
+            let (processedImage, redPixelHits, ringCenters) = self.analyzeRingsWithSubpixelAccuracy(in: self.image)
+            self.redPixelHits = redPixelHits
+            self.ringCenters = ringCenters
+            print("Ring analysis complete. Found \(ringCenters.values.flatMap { $0 }.count) ring centers at \(ringCenters.keys.count) angles")
+
+            self.analyzePolarData()
+            let heatmapImage = self.generateZernikeHeatmap(in: self.image, overlayOnOriginal: false)
+            print("Heat map Generated!")
+            
+            let elapsedTime = Date().timeIntervalSince(startTime)
+            let minimumDisplayTime: TimeInterval = 2.0
+            let remainingDelay = max(0, minimumDisplayTime - elapsedTime)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + remainingDelay) {
+                self.processedImage = processedImage
+                self.heatmapImage = heatmapImage
+                self.isProcessing = false
+                self.isGeneratingZernike = false
+            }
+        }
+    }
+    
     func getPixelColor(at point: CGPoint, in image: UIImage) -> UIColor? {
         guard let cgImage = image.cgImage,
               let pixelData = getPixelData(from: cgImage) else { return nil }
@@ -97,30 +127,11 @@ extension PatientDetailView {
         }
     }
     
-    
-    // MARK: - Image Processing Functions
-    
-    func processImage() {
-        isProcessing = true
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            let (resultImage, hits, centers) = self.analyzeRingsWithSubpixelAccuracy(in: self.image)
-            
-            DispatchQueue.main.async {
-                self.processedImage = resultImage
-                self.redPixelHits = hits
-                self.ringCenters = centers
-                self.isProcessing = false
-                print("Ring analysis complete. Found \(centers.values.flatMap { $0 }.count) ring centers at \(centers.keys.count) angles")
-            }
-        }
-    }
-    
     func analyzeRingsWithSubpixelAccuracy(in image: UIImage) -> (UIImage, [Int: [(x: Int, y: Int)]], [Int: [(radius: Double, x: Double, y: Double)]]) {
         let size = image.size
         let centerX = size.width / 2
         let centerY = (size.height / 2) + 10
-        let maxRadius = min(centerX, centerY) * 0.6
+        let maxRadius = min(centerX, centerY) * 0.9
         
         // Create graphics context
         UIGraphicsBeginImageContextWithOptions(size, false, image.scale)
@@ -142,8 +153,8 @@ extension PatientDetailView {
         var ringCenters: [Int: [(radius: Double, x: Double, y: Double)]] = [:]
         
         // Use more angles for better accuracy (similar to Python's 720)
-        let numAngles = 720
-        let numSamples = 800
+        let numAngles = 360
+        let numSamples = 500
         let threshold: Double = 0.5
         
         for angleIndex in 0..<numAngles {
@@ -246,7 +257,6 @@ extension PatientDetailView {
         a >= alphaThreshold
     }
     
-    
     func groupConsecutiveHits(hitRadii: [Double], hitIndices: [Int], angle: Double, centerX: Double, centerY: Double) -> [(radius: Double, x: Double, y: Double)] {
         guard !hitRadii.isEmpty else { return [] }
         
@@ -274,39 +284,51 @@ extension PatientDetailView {
             let centerRingY = centerY + avgRadius * sin(angle)
             groupedRings.append((radius: avgRadius, x: centerRingX, y: centerRingY))
         }
-        
         return groupedRings
     }
     
+    
+    
+    
+    
     func drawVisualization(context: CGContext, ringCenters: [Int: [(radius: Double, x: Double, y: Double)]], centerX: Double, centerY: Double, maxRadius: Double) {
+        
+        // Slides: Color, Threshold, Color + Points
+        // draw original image then slide the new one over.
+        
         // Draw ring centers as blue dots
         context.setFillColor(UIColor.blue.cgColor)
         for (_, rings) in ringCenters {
             for ring in rings {
-                let ringRect = CGRect(x: ring.x - 3, y: ring.y - 3, width: 6, height: 6)
+                let ringRect = CGRect(x: ring.x, y: ring.y, width: 2, height: 2)
                 context.fillEllipse(in: ringRect)
             }
         }
         
         // Draw some scan lines for reference (reduced for clarity)
-        context.setStrokeColor(UIColor.yellow.cgColor)
-        context.setLineWidth(0.8)
+//        context.setStrokeColor(UIColor.gray.cgColor)
+//        context.setLineWidth(0.9)
+//        
+//        for angle in stride(from: 0, to: 360, by: 10) {
+//            let radians = Double(angle) * .pi / 180
+//            context.beginPath()
+//            context.move(to: CGPoint(x: centerX, y: centerY))
+//            let endX = centerX + maxRadius * cos(radians)
+//            let endY = centerY + maxRadius * sin(radians)
+//            context.addLine(to: CGPoint(x: endX, y: endY))
+//            context.setLineDash(phase: 30, lengths: [3] )
+//            context.strokePath()
+//        }
         
-        for angle in stride(from: 0, to: 360, by: 10) {
-            let radians = Double(angle) * .pi / 180
-            context.beginPath()
-            context.move(to: CGPoint(x: centerX, y: centerY))
-            let endX = centerX + maxRadius * cos(radians)
-            let endY = centerY + maxRadius * sin(radians)
-            context.addLine(to: CGPoint(x: endX, y: endY))
-            context.strokePath()
-        }
+        //Unit Circle around eye, use gyroscope to get the rotation to adjust this value.
+        
         
         // Mark the center
         context.setFillColor(UIColor.green.cgColor)
-        let centerCircle = CGRect(x: centerX - 5, y: centerY - 5, width: 10, height: 10)
+        let centerCircle = CGRect(x: centerX, y: centerY, width: 3, height: 3)
         context.fillEllipse(in: centerCircle)
     }
+    
     
     func isRedPixel(r: UInt8, g: UInt8, b: UInt8, a: UInt8) -> Bool {
         // Define what constitutes a "red" pixel
@@ -347,36 +369,23 @@ extension PatientDetailView {
         
         return pixelData
     }
-}
-
-struct InfoRow: View {
-    let label: String
-    let value: String
     
-    var body: some View {
-        Divider()
-        HStack {
-            Text(label)
-                .font(.headline)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value)
-                .font(.body.monospacedDigit())
+    struct InfoRow: View {
+        let label: String
+        let value: String
+        
+        var body: some View {
+            Divider()
+            HStack {
+                Text(label)
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(value)
+                    .font(.body.monospacedDigit())
+            }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
     }
 }
 
-// MARK: GRAPHS YESSS 
-
-struct ZernikePolynomialGraphs: View {
-    var body: some View {
-        
-    }
-}
-
-struct ZernikePolynomialGraphs: View {
-    var body: some View {
-        
-    }
-}

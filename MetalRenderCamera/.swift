@@ -1,61 +1,18 @@
 //
-//  Patient.swift
+//  PatientFormViewController 2.swift
 //  MetalRenderCamera
 //
-//  Created by Nate  on 7/11/25.
+//  Created by Nate  on 7/24/25.
+//  Copyright © 2025 Old Yellow Bricks. All rights reserved.
 //
 
+
 import UIKit
-
-struct Patient {
-    // Patient info
-    var firstName: String
-    var lastName: String
-    var age: Int?
-    var email: String?
-    var phone: String?
-    var address: String?
-    
-    var eyeData: EyeData?
-}
-
-
-// Incorporate EyeType here Maybe?
-
-struct EyeData {
-    var leftEyeImage: UIImage?
-    var rightEyeImage: UIImage?
-    var leftEyeScore: Float?
-    var rightEyeScore: Float?
-    var leftEyeTimestamp: Date?
-    var rightEyeTimestamp: Date?
-    
-    init() {
-        // Initialize with nil values
-    }
-}
-
-
-
-// Unnesessary SLOP
-
-enum EyeType: String, CaseIterable {
-    case left = "Left Eye"
-    case right = "Right Eye"
-    
-    var displayName: String {
-        return rawValue
-    }
-}
-
-
-
+import SwiftData
 
 class PatientFormViewController: UIViewController {
-    
     // MARK: - Properties
-    var onSavePatient: ((Patient) -> Void)?
-
+    private let modelContext: ModelContext
     
     // MARK: - UI Elements
     private let scrollView: UIScrollView = {
@@ -142,7 +99,16 @@ class PatientFormViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-
+    
+    // MARK: - Initialization
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -150,7 +116,7 @@ class PatientFormViewController: UIViewController {
         
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve
-
+        
         setupUI()
         setupActions()
     }
@@ -158,7 +124,6 @@ class PatientFormViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
-
         title = "New Patient"
         
         // Add scroll view and content view
@@ -174,7 +139,6 @@ class PatientFormViewController: UIViewController {
         contentView.addSubview(addressTextField)
         contentView.addSubview(saveButton)
         contentView.addSubview(cancelButton)
-
         
         // Set constraints
         NSLayoutConstraint.activate([
@@ -190,20 +154,6 @@ class PatientFormViewController: UIViewController {
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            
-//            // Center and size the scroll view (shrinks the whole form)
-//            scrollView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-//            scrollView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-//            scrollView.widthAnchor.constraint(equalToConstant: 340),
-//            scrollView.heightAnchor.constraint(equalToConstant: 520),
-//
-//            // Content view inside scroll view
-//            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-//            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-//            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-//            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-//            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-
             
             // Form fields
             firstNameTextField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
@@ -240,28 +190,23 @@ class PatientFormViewController: UIViewController {
             saveButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             saveButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             saveButton.heightAnchor.constraint(equalToConstant: 50),
-            saveButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
             cancelButton.topAnchor.constraint(equalTo: saveButton.bottomAnchor, constant: 12),
             cancelButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             cancelButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             cancelButton.heightAnchor.constraint(equalToConstant: 50),
-            cancelButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 40)
-
+            cancelButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
     }
     
     private func setupActions() {
         saveButton.addTarget(self, action: #selector(savePatient), for: .touchUpInside)
+        cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         
         // Add keyboard dismissal
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tapGesture)
-        
-        //Cancel Go back to main menu
-        cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
     }
-    
     
     // MARK: - Actions
     @objc private func savePatient() {
@@ -283,16 +228,19 @@ class PatientFormViewController: UIViewController {
             email: email,
             phone: phone,
             address: address,
-            eyeData: nil
+            eyeData: nil,
+            imageStore: ImageStore() // Initialize with empty ImageStore
         )
         
-        print("Saving patient: \(newPatient)")
-        
-        // Notify Dashboard of the new patient
-        onSavePatient?(newPatient)
-
-        // Dismiss form
-        dismiss(animated: true)
+        // Save to SwiftData
+        modelContext.insert(newPatient)
+        do {
+            try modelContext.save()
+            print("Saved patient: \(newPatient)")
+            dismiss(animated: true)
+        } catch {
+            showAlert(message: "Failed to save patient: \(error.localizedDescription)")
+        }
     }
     
     @objc private func cancelTapped() {

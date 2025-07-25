@@ -5,33 +5,26 @@
 //  Created by Nate  on 7/15/25.
 //  Copyright © 2025 Old Yellow Bricks. All rights reserved.
 //
-
 import Foundation
 import UIKit
+import SwiftData
 
-class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate {
-
-    var patients: [Patient] = []
-    var onPatientSelected: ((Patient) -> Void)?
-
+class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate {
+    
+    private let modelContext: ModelContext
+    var onPatientSelected: ((Patient, EyeType?) -> Void)?
+    
+    private var patients: [Patient] = []
     private var filteredPatients: [Patient] = []
-
-//    private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
-//    
-//    private let dimmingView: UIView = {
-//        let view = UIView()
-//        view.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-//        return view
-//    }()
-
-    private let containerView = UIView();
+    
+    private let containerView = UIView()
     private let scrollView = UIScrollView()
     
     // MARK: Views for state
     private let optionView = UIView()
     private let searchView = UIView()
     private let formView = UIView()
-
+    
     private let searchBar = UISearchBar()
     private let tableView = UITableView()
     
@@ -45,16 +38,25 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
     private let phoneTextField = UITextField()
     private let addressTextField = UITextField()
     private let saveAndProceedButton = UIButton(type: .system)
-
+    
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         modalPresentationStyle = .overFullScreen
-        view.backgroundColor = .clear // Make main view transparent
+        view.backgroundColor = .clear
         setupViews()
         setupKeyboardNotifications()
         setupTapGesture()
         
-        // Initialize filtered patients to show all patients initially
+        fetchPatients()
         filteredPatients = patients
     }
     
@@ -62,66 +64,60 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         super.viewWillDisappear(animated)
         removeKeyboardNotifications()
     }
-
+    
     private func setupViews() {
-        // Container view setup
         containerView.translatesAutoresizingMaskIntoConstraints = false
         containerView.backgroundColor = .systemBackground
         containerView.layer.cornerRadius = 20
         containerView.clipsToBounds = true
-        containerView.layer.shadowColor = UIColor.black.cgColor // Add shadow for better visibility
+        containerView.layer.shadowColor = UIColor.black.cgColor
         containerView.layer.shadowOpacity = 0.2
         containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
         containerView.layer.shadowRadius = 10
         view.addSubview(containerView)
-
+        
         NSLayoutConstraint.activate([
             containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             containerView.widthAnchor.constraint(equalToConstant: 320),
             containerView.heightAnchor.constraint(equalToConstant: 400)
         ])
-
-        // ScrollView setup for horizontal paging
+        
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.isPagingEnabled = true
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.showsVerticalScrollIndicator = false
-        scrollView.isScrollEnabled = false // We'll control scrolling programmatically
+        scrollView.isScrollEnabled = false
         containerView.addSubview(scrollView)
-
+        
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
         ])
-
+        
         setupOptionView()
         setupSearchView()
         setupFormView()
-
+        
         scrollView.addSubview(optionView)
         scrollView.addSubview(searchView)
         scrollView.addSubview(formView)
-
-        // Set up constraints for the three views inside scroll view
+        
         NSLayoutConstraint.activate([
-            // Option view constraints
             optionView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             optionView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             optionView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             optionView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
             optionView.heightAnchor.constraint(equalTo: containerView.heightAnchor),
             
-            // Search view constraints
             searchView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             searchView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             searchView.leadingAnchor.constraint(equalTo: optionView.trailingAnchor),
             searchView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
             searchView.heightAnchor.constraint(equalTo: containerView.heightAnchor),
             
-            // Form view constraints
             formView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             formView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             formView.leadingAnchor.constraint(equalTo: searchView.trailingAnchor),
@@ -129,69 +125,10 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
             formView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
             formView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
         ])
-
-        // Set scroll view content size for 3 views
-        scrollView.contentSize = CGSize(width: 960, height: 400) // 3 * containerView width
-    }
-    
-    // MARK: Keyboard Management
-    private func setupKeyboardNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillShow),
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
         
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillHide),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
+        scrollView.contentSize = CGSize(width: 960, height: 400)
     }
     
-    private func removeKeyboardNotifications() {
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-    }
-    
-    @objc private func keyboardWillShow(notification: NSNotification) {
-        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
-        
-        let keyboardHeight = keyboardFrame.cgRectValue.height
-        
-        // Only adjust scroll view if the address field (last field) is active
-        if addressTextField.isFirstResponder {
-            let contentInset = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight - 120, right: 0)
-            formScrollView.contentInset = contentInset
-            formScrollView.scrollIndicatorInsets = contentInset
-            
-            // Scroll to show the address field and submit button
-            let addressFieldFrame = addressTextField.convert(addressTextField.bounds, to: formScrollView)
-            let submitButtonFrame = saveAndProceedButton.convert(saveAndProceedButton.bounds, to: formScrollView)
-            let combinedFrame = addressFieldFrame.union(submitButtonFrame)
-            formScrollView.scrollRectToVisible(combinedFrame, animated: true)
-        }
-    }
-    
-    @objc private func keyboardWillHide(notification: NSNotification) {
-        // Reset form scroll view content inset
-        formScrollView.contentInset = UIEdgeInsets.zero
-        formScrollView.scrollIndicatorInsets = UIEdgeInsets.zero
-    }
-    
-    // MARK: Tap Gesture for Keyboard Dismiss
-    private func setupTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        tapGesture.cancelsTouchesInView = false
-        view.addGestureRecognizer(tapGesture)
-    }
-    
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
-    }
-
     private func setupOptionView() {
         optionView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -202,7 +139,7 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         newButton.setTitleColor(.white, for: .normal)
         newButton.layer.cornerRadius = 8
         newButton.addTarget(self, action: #selector(newPatientTapped), for: .touchUpInside)
-
+        
         let existingButton = UIButton(type: .system)
         existingButton.setTitle("Existing Patient", for: .normal)
         existingButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
@@ -210,37 +147,46 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         existingButton.setTitleColor(.white, for: .normal)
         existingButton.layer.cornerRadius = 8
         existingButton.addTarget(self, action: #selector(existingPatientTapped), for: .touchUpInside)
-
-        let stack = UIStackView(arrangedSubviews: [newButton, existingButton])
+        
+        let cancelButton = UIButton(type: .system)
+        cancelButton.setTitle("Cancel", for: .normal)
+        cancelButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        cancelButton.backgroundColor = .systemRed
+        cancelButton.setTitleColor(.white, for: .normal)
+        cancelButton.layer.cornerRadius = 8
+        cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+        
+        let stack = UIStackView(arrangedSubviews: [newButton, existingButton, cancelButton])
         stack.axis = .vertical
         stack.spacing = 20
         stack.translatesAutoresizingMaskIntoConstraints = false
         optionView.addSubview(stack)
-
+        
         NSLayoutConstraint.activate([
             stack.centerXAnchor.constraint(equalTo: optionView.centerXAnchor),
             stack.centerYAnchor.constraint(equalTo: optionView.centerYAnchor),
             newButton.heightAnchor.constraint(equalToConstant: 50),
             existingButton.heightAnchor.constraint(equalToConstant: 50),
+            cancelButton.heightAnchor.constraint(equalToConstant: 50),
             newButton.widthAnchor.constraint(equalToConstant: 200),
-            existingButton.widthAnchor.constraint(equalToConstant: 200)
+            existingButton.widthAnchor.constraint(equalToConstant: 200),
+            cancelButton.widthAnchor.constraint(equalToConstant: 200)
         ])
     }
-
+    
     private func setupSearchView() {
         searchView.translatesAutoresizingMaskIntoConstraints = false
         searchBar.delegate = self
         searchBar.placeholder = "Search for a patient"
-
+        
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PatientCell")
-
-        // Add a back button
+        
         let backButton = UIButton(type: .system)
         backButton.setTitle("← Back", for: .normal)
         backButton.addTarget(self, action: #selector(backToOptionsFromSearch), for: .touchUpInside)
-
+        
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         backButton.translatesAutoresizingMaskIntoConstraints = false
@@ -248,7 +194,7 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         searchView.addSubview(backButton)
         searchView.addSubview(searchBar)
         searchView.addSubview(tableView)
-
+        
         NSLayoutConstraint.activate([
             backButton.topAnchor.constraint(equalTo: searchView.topAnchor, constant: 10),
             backButton.leadingAnchor.constraint(equalTo: searchView.leadingAnchor, constant: 10),
@@ -256,7 +202,7 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
             searchBar.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 10),
             searchBar.leadingAnchor.constraint(equalTo: searchView.leadingAnchor, constant: 10),
             searchBar.trailingAnchor.constraint(equalTo: searchView.trailingAnchor, constant: -10),
-
+            
             tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 10),
             tableView.leadingAnchor.constraint(equalTo: searchView.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: searchView.trailingAnchor),
@@ -267,12 +213,10 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
     private func setupFormView() {
         formView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Setup form scroll view
         formScrollView.translatesAutoresizingMaskIntoConstraints = false
-        formScrollView.keyboardDismissMode = .onDrag // Dismiss keyboard when scrolling
+        formScrollView.keyboardDismissMode = .onDrag
         formContentView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Setup text fields
         setupTextField(firstNameTextField, placeholder: "First Name")
         setupTextField(lastNameTextField, placeholder: "Last Name")
         setupTextField(ageTextField, placeholder: "Age", keyboardType: .numberPad)
@@ -280,7 +224,6 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         setupTextField(phoneTextField, placeholder: "Phone", keyboardType: .phonePad)
         setupTextField(addressTextField, placeholder: "Address")
         
-        // Setup save button
         saveAndProceedButton.setTitle("Save & Proceed", for: .normal)
         saveAndProceedButton.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         saveAndProceedButton.backgroundColor = .systemBlue
@@ -289,13 +232,11 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         saveAndProceedButton.translatesAutoresizingMaskIntoConstraints = false
         saveAndProceedButton.addTarget(self, action: #selector(saveAndProceedTapped), for: .touchUpInside)
         
-        // Add a back button for form
         let formBackButton = UIButton(type: .system)
         formBackButton.setTitle("← Back", for: .normal)
         formBackButton.addTarget(self, action: #selector(backToOptionsFromForm), for: .touchUpInside)
         formBackButton.translatesAutoresizingMaskIntoConstraints = false
         
-        // Add subviews
         formView.addSubview(formBackButton)
         formView.addSubview(formScrollView)
         formScrollView.addSubview(formContentView)
@@ -309,24 +250,20 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         formContentView.addSubview(saveAndProceedButton)
         
         NSLayoutConstraint.activate([
-            // Back button
             formBackButton.topAnchor.constraint(equalTo: formView.topAnchor, constant: 10),
             formBackButton.leadingAnchor.constraint(equalTo: formView.leadingAnchor, constant: 10),
             
-            // Form scroll view
             formScrollView.topAnchor.constraint(equalTo: formBackButton.bottomAnchor, constant: 10),
             formScrollView.leadingAnchor.constraint(equalTo: formView.leadingAnchor),
             formScrollView.trailingAnchor.constraint(equalTo: formView.trailingAnchor),
             formScrollView.bottomAnchor.constraint(equalTo: formView.bottomAnchor),
             
-            // Form content view
             formContentView.topAnchor.constraint(equalTo: formScrollView.topAnchor),
             formContentView.leadingAnchor.constraint(equalTo: formScrollView.leadingAnchor),
             formContentView.trailingAnchor.constraint(equalTo: formScrollView.trailingAnchor),
             formContentView.bottomAnchor.constraint(equalTo: formScrollView.bottomAnchor),
             formContentView.widthAnchor.constraint(equalTo: formScrollView.widthAnchor),
             
-            // Form fields
             firstNameTextField.topAnchor.constraint(equalTo: formContentView.topAnchor, constant: 20),
             firstNameTextField.leadingAnchor.constraint(equalTo: formContentView.leadingAnchor, constant: 20),
             firstNameTextField.trailingAnchor.constraint(equalTo: formContentView.trailingAnchor, constant: -20),
@@ -374,7 +311,6 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         textField.returnKeyType = .next
         textField.delegate = self
         
-        // Add toolbar with Done button for number pad keyboards
         if keyboardType == .numberPad || keyboardType == .phonePad {
             let toolbar = UIToolbar()
             toolbar.sizeToFit()
@@ -386,51 +322,105 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
     }
     
     private func resizeContainerForForm() {
-        // Animate container to larger size for form
-        UIView.animate(withDuration: 0.1) {
-            self.containerView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+        UIView.animate(withDuration: 0.3) {
+            self.containerView.transform = CGAffineTransform(scaleX: 1.2, y: 1.4)
         }
     }
     
     private func resetContainerSize() {
-        // Reset container to original size
-        UIView.animate(withDuration: 0.1) {
+        UIView.animate(withDuration: 0.3) {
             self.containerView.transform = CGAffineTransform.identity
         }
     }
-
+    
+    private func fetchPatients() {
+        do {
+            let descriptor = FetchDescriptor<Patient>(sortBy: [SortDescriptor(\.lastName)])
+            patients = try modelContext.fetch(descriptor)
+            filteredPatients = patients
+            tableView.reloadData()
+        } catch {
+            print("Failed to fetch patients: \(error)")
+        }
+    }
+    
+    // MARK: Keyboard Management
+    private func setupKeyboardNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+    
+    private func removeKeyboardNotifications() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    @objc private func keyboardWillShow(notification: NSNotification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
+        
+        let keyboardHeight = keyboardFrame.cgRectValue.height
+        
+        if addressTextField.isFirstResponder {
+            let contentInset = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight - 120, right: 0)
+            formScrollView.contentInset = contentInset
+            formScrollView.scrollIndicatorInsets = contentInset
+            
+            let addressFieldFrame = addressTextField.convert(addressTextField.bounds, to: formScrollView)
+            let submitButtonFrame = saveAndProceedButton.convert(saveAndProceedButton.bounds, to: formScrollView)
+            let combinedFrame = addressFieldFrame.union(submitButtonFrame)
+            formScrollView.scrollRectToVisible(combinedFrame, animated: true)
+        }
+    }
+    
+    @objc private func keyboardWillHide(notification: NSNotification) {
+        formScrollView.contentInset = UIEdgeInsets.zero
+        formScrollView.scrollIndicatorInsets = UIEdgeInsets.zero
+    }
+    
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
     // MARK: Actions
     @objc private func newPatientTapped() {
-        // First slide to form view, then resize
         UIView.animate(withDuration: 0.3) {
             self.scrollView.setContentOffset(CGPoint(x: 640, y: 0), animated: false)
         } completion: { _ in
             self.resizeContainerForForm()
         }
     }
-
+    
     @objc private func existingPatientTapped() {
-        // Slide scrollView to show searchView
         UIView.animate(withDuration: 0.3) {
             self.scrollView.setContentOffset(CGPoint(x: 320, y: 0), animated: false)
         }
     }
     
     @objc private func backToOptionsFromSearch() {
-        // Dismiss keyboard first
         view.endEditing(true)
-        
-        // Slide back to option view
         UIView.animate(withDuration: 0.3) {
             self.scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
         }
     }
     
     @objc private func backToOptionsFromForm() {
-        // Dismiss keyboard first
         view.endEditing(true)
-        
-        // First reset size, then slide back to option view
         resetContainerSize()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             UIView.animate(withDuration: 0.3) {
@@ -439,11 +429,13 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         }
     }
     
+    @objc private func cancelTapped() {
+        dismiss(animated: true)
+    }
+    
     @objc private func saveAndProceedTapped() {
-        // Dismiss keyboard first
         view.endEditing(true)
         
-        // Validate required fields
         guard let firstName = firstNameTextField.text, !firstName.isEmpty else {
             showAlert(message: "First name is required")
             return
@@ -465,13 +457,35 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
             eyeData: nil
         )
         
-        // Save the patient and proceed to camera
-        resetContainerSize()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.dismiss(animated: true) {
-                self.onPatientSelected?(newPatient)
-            }
+        modelContext.insert(newPatient)
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save patient: \(error)")
+            showAlert(message: "Failed to save patient")
+            return
         }
+        
+        // Show eye selection alert for new patient
+        let alert = UIAlertController(
+            title: "Select Eye",
+            message: "Choose which eye to capture for \(newPatient.firstName)",
+            preferredStyle: .actionSheet
+        )
+        alert.addAction(UIAlertAction(title: "Left Eye", style: .default) { _ in
+            self.resetContainerSize()
+            self.dismiss(animated: true) {
+                self.onPatientSelected?(newPatient, .left)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Right Eye", style: .default) { _ in
+            self.resetContainerSize()
+            self.dismiss(animated: true) {
+                self.onPatientSelected?(newPatient, .right)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
     
     private func showAlert(message: String) {
@@ -479,7 +493,7 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
-
+    
     // MARK: SearchBar
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchText.isEmpty {
@@ -492,32 +506,49 @@ class PatientPickerViewController: UIViewController, UISearchBarDelegate, UITabl
         }
         tableView.reloadData()
     }
-
+    
     // MARK: Table
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         filteredPatients.count
     }
-
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PatientCell", for: indexPath)
         let patient = filteredPatients[indexPath.row]
         cell.textLabel?.text = "\(patient.firstName) \(patient.lastName)"
+        if let eyeData = patient.eyeData {
+            cell.detailTextLabel?.text = "Left Notes: \(eyeData.leftEyeNotes ?? "None"), Right Notes: \(eyeData.rightEyeNotes ?? "None")"
+        } else {
+            cell.detailTextLabel?.text = "No eye data"
+        }
         return cell
     }
-
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let selected = filteredPatients[indexPath.row]
-        dismiss(animated: true) {
-            self.onPatientSelected?(selected)
-        }
+        
+        let alert = UIAlertController(
+            title: "Select Eye",
+            message: "Choose which eye to capture for \(selected.firstName)",
+            preferredStyle: .actionSheet
+        )
+        alert.addAction(UIAlertAction(title: "Left Eye", style: .default) { _ in
+            self.dismiss(animated: true) {
+                self.onPatientSelected?(selected, .left)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Right Eye", style: .default) { _ in
+            self.dismiss(animated: true) {
+                self.onPatientSelected?(selected, .right)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
-}
-
-// MARK: UITextFieldDelegate
-extension PatientPickerViewController: UITextFieldDelegate {
+    
+    // MARK: UITextFieldDelegate
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        // Move to next text field or dismiss keyboard
         switch textField {
         case firstNameTextField:
             lastNameTextField.becomeFirstResponder()

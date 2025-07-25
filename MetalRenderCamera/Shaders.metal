@@ -43,7 +43,6 @@ fragment half4 displayTexture(TextureMappingVertex mappingVertex [[ stage_in ]],
     // Sample base color
     float4 color = texture.sample(s, uv);
     float luminance = dot(color.rgb, float3(0.299, 0.587, 0.114));
-    float binary = step(threshold, luminance);
 
     // === Draw expanding circle centered at (0.5, 0.5) ===
     float2 textureSize = float2(1290.0, 2796.0);
@@ -116,9 +115,9 @@ kernel void analyzeCenterRegion(
     ushort2 textureSize = ushort2(inTexture.get_width(), inTexture.get_height());
     float2 center = float2(textureSize) * 0.5;
     
-    // Match the cross dimensions from the fragment shader
-    float crossSize = 0.02; // Half-length of cross arms in UV space
-    float crossThickness = 0.002; // Thickness of cross lines
+    // Smaller cross dimensions (halved)
+    float crossSize = 0.01;      // Half-length of cross arms in UV space (was 0.02)
+    float crossThickness = 0.001; // Thickness of cross lines (was 0.002)
     
     // Convert UV space dimensions to pixel space
     int crossSizePixels = int(crossSize * float(textureSize.x));
@@ -172,3 +171,8 @@ kernel void analyzeCenterRegion(
 
     resultBuffer[0] = count > 0 ? (sum / float(count)) : 0.0;
 }
+
+// MARK: Binary Threshold for SwiftUI Patient Detail View
+
+
+
