@@ -62,6 +62,7 @@ public enum MetalCameraSessionError: Error {
     case failedToGetImageBuffer
     case failedToCreateTextureFromImage
     case failedToRetrieveTimestamp
+    case unknownError
     
     /**
      Indicates if the error is related to streaming the media.
@@ -103,6 +104,8 @@ public enum MetalCameraSessionError: Error {
             return "Failed to retrieve timestamp from the sample buffer"
         case .frameRateNotSupported:
             return "Specified frame rate is not supported by the camera"
+        case .unknownError:
+            return "Unknown error"
         }
     }
 }

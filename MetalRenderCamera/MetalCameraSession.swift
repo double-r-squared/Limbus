@@ -87,33 +87,56 @@ public final class MetalCameraSession: NSObject {
     public func start() {
         requestCameraAccess()
 
-        captureSessionQueue.async(execute: {
+        captureSessionQueue.async {
             do {
-                self.captureSession.beginConfiguration()
-                try self.initializeInputDevice()
-                try self.initializeOutputData()
-                self.captureSession.commitConfiguration()
-                try self.initializeTextureCache()
-                self.captureSession.startRunning()
-                self.state = .streaming
-            }
-            catch let error as MetalCameraSessionError {
+                // Only reconfigure if not already running
+                if !self.captureSession.isRunning {
+                    self.captureSession.beginConfiguration()
+                    try self.initializeInputDevice()
+                    try self.initializeOutputData()
+                    self.captureSession.commitConfiguration()
+                    
+                    // Reinitialize texture cache if needed
+                    if self.textureCache == nil {
+                        try self.initializeTextureCache()
+                    }
+                    
+                    self.captureSession.startRunning()
+                    self.state = .streaming
+                }
+            } catch let error as MetalCameraSessionError {
                 self.handleError(error)
+            } catch {
+                // Handle unexpected errors
+                self.handleError(.unknownError)
             }
-            catch {
-                // We only throw `MetalCameraSessionError` errors.
-            }
-        })
+        }
     }
 
     /**
      Stops the capture session.
      */
     public func stop() {
-        captureSessionQueue.async(execute: {
-            self.captureSession.stopRunning()
+        captureSessionQueue.async {
+            if self.captureSession.isRunning {
+                self.captureSession.stopRunning()
+            }
+            // Reset inputs and outputs
+            if let input = self.inputDevice {
+                self.captureSession.removeInput(input)
+                self.inputDevice = nil
+            }
+            if let output = self.outputData {
+                self.captureSession.removeOutput(output)
+                self.outputData = nil
+            }
+            // Flush texture cache
+            if let textureCache = self.textureCache {
+                CVMetalTextureCacheFlush(textureCache, 0)
+                self.textureCache = nil
+            }
             self.state = .stopped
-        })
+        }
     }
     
     // MARK: Private properties and methods
@@ -122,7 +145,7 @@ public final class MetalCameraSession: NSObject {
     fileprivate var state: MetalCameraSessionState = .waiting {
         didSet {
             guard state != .error else { return }
-            
+            print("MetalCameraSession: State changed to \(state)")
             delegate?.metalCameraSession(self, didUpdateState: state, error: nil)
         }
     }
@@ -271,8 +294,25 @@ public final class MetalCameraSession: NSObject {
      */
     @objc
     fileprivate func captureSessionRuntimeError() {
-        if state == .streaming {
-            handleError(.captureSessionRuntimeError)
+        captureSessionQueue.async {
+            if self.state == .streaming {
+                self.captureSession.stopRunning()
+                self.state = .stopped
+                self.handleError(.captureSessionRuntimeError)
+                // Clean up resources
+                if let input = self.inputDevice {
+                    self.captureSession.removeInput(input)
+                    self.inputDevice = nil
+                }
+                if let output = self.outputData {
+                    self.captureSession.removeOutput(output)
+                    self.outputData = nil
+                }
+                // Attempt to restart after a delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.start()
+                }
+            }
         }
     }
     

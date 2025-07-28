@@ -18,7 +18,7 @@ extension PatientDetailView {
         
         DispatchQueue.global(qos: .userInitiated).async {
             let startTime = Date()
-            let (processedImage, redPixelHits, ringCenters) = self.analyzeRingsWithSubpixelAccuracy(in: self.image)
+            let (processedImage, redPixelHits, ringCenters) = self.analyzeRingsWithSubpixelAccuracy(in: self.image, self.numSamples)
             self.redPixelHits = redPixelHits
             self.ringCenters = ringCenters
             print("Ring analysis complete. Found \(ringCenters.values.flatMap { $0 }.count) ring centers at \(ringCenters.keys.count) angles")
@@ -127,7 +127,7 @@ extension PatientDetailView {
         }
     }
     
-    func analyzeRingsWithSubpixelAccuracy(in image: UIImage) -> (UIImage, [Int: [(x: Int, y: Int)]], [Int: [(radius: Double, x: Double, y: Double)]]) {
+    func analyzeRingsWithSubpixelAccuracy(in image: UIImage, numSamples: Int) -> (UIImage, [Int: [(x: Int, y: Int)]], [Int: [(radius: Double, x: Double, y: Double)]]) {
         let size = image.size
         let centerX = size.width / 2
         let centerY = (size.height / 2) + 10

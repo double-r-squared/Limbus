@@ -420,4 +420,9 @@ extension PatientDetailView {
             print("Center in image coordinates: (\(imageCenterX), \(imageCenterY))")
         }
     }
+    
+    private func adjustNumSamples(numSamples: Int) {
+        
+    }
 }
+

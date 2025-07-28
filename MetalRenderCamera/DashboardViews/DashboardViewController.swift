@@ -26,7 +26,6 @@ class DashboardViewController: UIViewController, UITableViewDelegate, UITableVie
     private let tableView: UITableView = {
         let table = UITableView()
         table.translatesAutoresizingMaskIntoConstraints = false
-        table.allowsSelection = false // Disable row selection
         return table
     }()
     
@@ -80,6 +79,11 @@ class DashboardViewController: UIViewController, UITableViewDelegate, UITableVie
         fetchPatients()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        fetchPatients() // Refresh data when returning to dashboard
+    }
+    
     private func setupUI() {
         view.addSubview(buttonStackView)
         view.addSubview(searchBar)
@@ -92,7 +96,7 @@ class DashboardViewController: UIViewController, UITableViewDelegate, UITableVie
         searchBar.delegate = self
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PatientCell") // Register cell class
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PatientCell")
         
         topographyButton.addTarget(self, action: #selector(topographyTapped), for: .touchUpInside)
         
@@ -132,7 +136,7 @@ class DashboardViewController: UIViewController, UITableViewDelegate, UITableVie
         do {
             let descriptor = FetchDescriptor<Patient>(sortBy: [SortDescriptor(\.lastName)])
             patients = try modelContext.fetch(descriptor)
-            filteredPatients = patients // Initialize filteredPatients
+            filteredPatients = patients
             tableView.reloadData()
         } catch {
             print("Failed to fetch patients: \(error)")
@@ -163,18 +167,81 @@ class DashboardViewController: UIViewController, UITableViewDelegate, UITableVie
     
     // MARK: UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filteredPatients.count // Use filteredPatients
+        return filteredPatients.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PatientCell", for: indexPath)
-        let patient = filteredPatients[indexPath.row] // Use filteredPatients
+        let patient = filteredPatients[indexPath.row]
         cell.textLabel?.text = "\(patient.firstName) \(patient.lastName)"
+        
         if let eyeData = patient.eyeData {
-            cell.detailTextLabel?.text = "Left Notes: \(eyeData.leftEyeNotes ?? "None"), Right Notes: \(eyeData.rightEyeNotes ?? "None")"
+            var detailText = ""
+            if eyeData.leftEyeTimestamp != nil {
+                detailText += "Left Eye: ✓"
+            }
+            if eyeData.rightEyeTimestamp != nil {
+                if !detailText.isEmpty { detailText += ", " }
+                detailText += "Right Eye: ✓"
+            }
+            cell.detailTextLabel?.text = detailText.isEmpty ? "No eye data" : detailText
         } else {
             cell.detailTextLabel?.text = "No eye data"
         }
+        
+        cell.accessoryType = .disclosureIndicator
         return cell
+    }
+    
+    // MARK: UITableViewDelegate
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let patient = filteredPatients[indexPath.row]
+        
+        let patientInfoView = PatientInfoView(patient: patient, modelContext: modelContext)
+        let hostingController = UIHostingController(rootView: patientInfoView)
+        hostingController.title = "\(patient.firstName) \(patient.lastName)"
+        
+        navigationController?.pushViewController(hostingController, animated: true)
+    }
+    
+    // MARK: Swipe to Delete
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            let patient = filteredPatients[indexPath.row]
+            
+            let alert = UIAlertController(title: "Delete Patient",
+                                        message: "Are you sure you want to delete \(patient.firstName) \(patient.lastName)? This action cannot be undone.",
+                                        preferredStyle: .alert)
+            
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+                self?.deletePatient(patient, at: indexPath)
+            })
+            
+            present(alert, animated: true)
+        }
+    }
+    
+    private func deletePatient(_ patient: Patient, at indexPath: IndexPath) {
+        do {
+            modelContext.delete(patient)
+            try modelContext.save()
+            
+            // Remove from both arrays
+            if let originalIndex = patients.firstIndex(where: { $0 === patient }) {
+                patients.remove(at: originalIndex)
+            }
+            filteredPatients.remove(at: indexPath.row)
+            
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        } catch {
+            print("Failed to delete patient: \(error)")
+            let errorAlert = UIAlertController(title: "Error",
+                                             message: "Failed to delete patient. Please try again.",
+                                             preferredStyle: .alert)
+            errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(errorAlert, animated: true)
+        }
     }
 }

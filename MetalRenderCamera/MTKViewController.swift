@@ -186,21 +186,39 @@ extension MTKViewController: MTKViewDelegate {
         NSLog("MTKView drawable size will change to \(size)")
     }
     
-    public func draw(in: MTKView) {
-        _ = semaphore.wait(timeout: DispatchTime.distantFuture)
+    public func draw(in view: MTKView) {
+        _ = semaphore.wait(timeout: .distantFuture)
 
         autoreleasepool {
-            guard
-                var texture = texture,
-                let device = device,
-                let commandBuffer = commandQueue?.makeCommandBuffer()
-            else {
+            guard let device = device,
+                  let commandBuffer = commandQueue?.makeCommandBuffer() else {
                 _ = semaphore.signal()
                 return
             }
 
-            willRenderTexture(&texture, withCommandBuffer: commandBuffer, device: device)
-            render(texture: texture, withCommandBuffer: commandBuffer, device: device)
+            // If no texture is available, clear the view
+            if texture == nil {
+                guard let currentDrawable = metalView.currentDrawable else {
+                    _ = semaphore.signal()
+                    return
+                }
+                let renderPassDescriptor = MTLRenderPassDescriptor()
+                renderPassDescriptor.colorAttachments[0].texture = currentDrawable.texture
+                renderPassDescriptor.colorAttachments[0].loadAction = .clear
+                renderPassDescriptor.colorAttachments[0].storeAction = .store
+                renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1) // Black background
+                if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
+                    renderEncoder.endEncoding()
+                }
+                commandBuffer.present(currentDrawable)
+                commandBuffer.commit()
+                _ = semaphore.signal()
+                return
+            }
+
+            var textureToRender = texture!
+            willRenderTexture(&textureToRender, withCommandBuffer: commandBuffer, device: device)
+            render(texture: textureToRender, withCommandBuffer: commandBuffer, device: device)
         }
     }
     

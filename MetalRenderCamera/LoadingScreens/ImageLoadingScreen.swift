@@ -31,7 +31,7 @@ extension PatientDetailView {
                             endRadius: 100 * ringScale
                         )
                     )
-                    .frame(width: 200, height: 200)
+                    .frame(height: 200)
                     .scaleEffect(ringScale)
                     .opacity(opacity)
                     .onAppear {

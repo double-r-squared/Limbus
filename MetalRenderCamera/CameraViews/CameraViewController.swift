@@ -1,15 +1,8 @@
-//
-//  CameraViewController.swift
-//  MetalShaderCamera
-//
-//  Created by Alex Staravoitau on 24/04/2016.
-//  Copyright © 2016 Old Yellow Bricks. All rights reserved.
-//
-
 import UIKit
 import Metal
 import SwiftUI
 import SwiftData
+import MetalKit
 
 internal class CameraViewController: MTKViewController {
     var session: MetalCameraSession?
@@ -85,26 +78,63 @@ internal class CameraViewController: MTKViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        print("CameraViewController: viewWillAppear called")
+        texture = nil
+        clearMetalView()
         session?.start()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        print("CameraViewController: viewDidDisappear called")
         session?.stop()
+        texture = nil
+        clearMetalView()
     }
     
     private func navigateToPatientDetail(patient: Patient, image: UIImage, eyeType: EyeType) {
         session?.stop()
+
+        let swiftUIView = PatientDetailView(
+            patient: patient,
+            image: image,
+            eyeType: eyeType,
+            modelContext: ModelContext(try! ModelContainer(for: Patient.self)),
+            onBacktoCamera: { [weak self] newEyeType in
+                DispatchQueue.main.async {
+                    if let newEyeType = newEyeType {
+                        self?.eyeType = newEyeType // Update eyeType for the next capture
+                    }
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            },
+            onBacktoDash: { [weak self] in
+                DispatchQueue.main.async {
+                    // Dismiss the entire modal to return to Dashboard
+                    self?.dismiss(animated: true)
+                }
+            }
+        )
         
-        let swiftUIView = PatientDetailView(patient: patient, image: image, eyeType: eyeType)
         let hostingVC = UIHostingController(rootView: swiftUIView)
-        let nav = UINavigationController(rootViewController: hostingVC)
-        
-        if let window = view.window {
-            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: {
-                window.rootViewController = nav
-            })
+        navigationController?.pushViewController(hostingVC, animated: true)
+    }
+    
+    private func clearMetalView() {
+        guard let mtkView = view as? MTKView else { return }
+        mtkView.drawableSize = mtkView.bounds.size
+        mtkView.clearColor = MTLClearColorMake(0, 0, 0, 1) // Black background
+        guard let drawable = mtkView.currentDrawable,
+              let commandBuffer = commandQueue?.makeCommandBuffer() else { return }
+        let renderPassDescriptor = MTLRenderPassDescriptor()
+        renderPassDescriptor.colorAttachments[0].texture = drawable.texture
+        renderPassDescriptor.colorAttachments[0].loadAction = .clear
+        renderPassDescriptor.colorAttachments[0].storeAction = .store
+        if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
+            renderEncoder.endEncoding()
         }
+        commandBuffer.present(drawable)
+        commandBuffer.commit()
     }
     
     private func showAlert(message: String) {
@@ -117,6 +147,7 @@ internal class CameraViewController: MTKViewController {
 // MARK: - MetalCameraSessionDelegate
 extension CameraViewController: MetalCameraSessionDelegate {
     func metalCameraSession(_ session: MetalCameraSession, didReceiveFrameAsTextures textures: [MTLTexture], withTimestamp timestamp: Double) {
+        print("CameraViewController: Received new frame at timestamp: \(timestamp)")
         self.texture = textures[0]
         DispatchQueue.main.async {
             self.title = "Patient: \(self.patient?.firstName ?? "Unknown")"
@@ -124,15 +155,12 @@ extension CameraViewController: MetalCameraSessionDelegate {
     }
     
     func metalCameraSession(_ cameraSession: MetalCameraSession, didUpdateState state: MetalCameraSessionState, error: MetalCameraSessionError?) {
+        print("CameraViewController: Session state changed to \(state), error: \(error?.localizedDescription ?? "None")")
         switch state {
         case .error where error == .captureSessionRuntimeError:
             cameraSession.start()
         default:
             break
         }
-        DispatchQueue.main.async {
-            print("Metal camera: \(state)")
-        }
-        NSLog("Session changed state to \(state) with error: \(error?.localizedDescription ?? "None").")
     }
 }
