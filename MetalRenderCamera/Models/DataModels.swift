@@ -83,3 +83,18 @@ enum EyeType: String, CaseIterable, Codable {
         return rawValue
     }
 }
+
+// Used to standardize the rest of the pipline.
+@Model
+class CalibrationData {
+    var ringCenters: [Int: [(radius: Double, x: Double, y: Double)]]?
+    var zernikeCoefficients: [Double]?
+    var zernikeModes: [(n: Int, m: Int)]?
+    
+    init(
+        ringCenters: [Int: [(radius: Double, x: Double, y: Double)]]? = nil, zernikeCoefficients:[Double]? = nil, zernikeModes: [(n: Int, m: Int)]? = nil) {
+        self.ringCenters = ringCenters
+        self.zernikeCoefficients = zernikeCoefficients
+        self.zernikeModes = zernikeModes
+    }
+}

@@ -18,6 +18,7 @@ struct PatientDetailView: View {
     @State internal var zernikeCoefficients: [Double] = []
     @State internal var zernikeModes: [(n: Int, m: Int)] = []
     @State internal var radiusHeightAtAngle: RadiusHeightAtAngleData = [:]
+    
     @State private var selectedRadiusIndex: Int? = nil
     @State private var targetAngle: Int = 0
     
@@ -27,9 +28,11 @@ struct PatientDetailView: View {
     
     // MARK: Adjdustabl Variables
     /// "If you cant make it percise, make it adjustable"
-    @State private var numSamples: Int? = 500
-    @State private var threshold: Int? = nil
-    @State private var slopeCoef: CGFloat? = nil
+    @State internal var numSamples: Int = 500
+    @State internal var numAngles: Int = 360
+    @State internal var threshold: Double = 0.5
+    @State internal var slopeCoef: Double = 1.0
+    @State internal var referanceDistance: Double = 5.0
     
     // MARK: Navigation Callbacks
     var onBacktoCamera: ((EyeType?) -> Void)?

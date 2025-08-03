@@ -26,7 +26,7 @@ extension PatientDetailView {
         var radiusHeightData: RadiusHeightAtAngleData = [:]
         
         let angles = ringCenters.keys.sorted()
-        
+                
         guard !angles.isEmpty, angles.count == ringCenters.keys.count else {
             print("Error: Number of angles must match number of rays in ringCenters")
             return ([], [], [], [:])
@@ -46,9 +46,9 @@ extension PatientDetailView {
                 var j: Double = 0
                 if index > 0 {
                     let distance = abs(rayRadii[index] - rayRadii[index - 1])
-                    j = distance < 5.5 ? distance - 5.5 : 5.5 - distance
+                    j = distance < referanceDistance ? distance - referanceDistance : referanceDistance - distance
                 }
-                let z = 0.01 * pow((Double(index) + j), 2)
+                let z = slopeCoef * pow((Double(index) + j), 2)
                 zList.append(z)
                 
                 radiusHeightPairs.append((radius: radius, height: z))

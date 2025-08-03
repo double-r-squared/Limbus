@@ -1,10 +1,11 @@
 //
-//  PointEditor.swift
+//  PointEditorView.swift
 //  Metal Camera
 //
-//  Created by Nate  on 7/22/25.
+//  Created by Nate  on 7/28/25.
 //  Copyright © 2025 Old Yellow Bricks. All rights reserved.
 //
+
 import Foundation
 import SwiftUI
 
@@ -12,417 +13,190 @@ extension PatientDetailView {
     
     struct PointEditorView: View {
         let image: UIImage
-        @Binding var ringCenters: [Int: [(radius: Double, x: Double, y: Double)]]
+        let ringCenters: [Int: [(radius: Double, x: Double, y: Double)]]
         @Binding var isPresented: Bool
+        @Binding var numSamples: Int
+        @Binding var numAngles: Int
+        @Binding var threshold: Double
+        @Binding var slopeCoef: Double
+        @Binding var referanceDistance: Double
         
-        // MARK: - State Management
-        @State private var editMode: EditMode = .none
-        @State private var draggedPointKey: String? = nil
-        @State private var isDraggingCenter: Bool = false
-        @State private var undoStack: [[Int: [(radius: Double, x: Double, y: Double)]]] = []
-        @State private var scale: CGFloat = 1.0
-        @State private var offset: CGSize = .zero
-        @State private var centerPoint: CGPoint = CGPoint(x: 200, y: 200)
+        let onReprocess: () -> Void
         
-        // MARK: - Edit Modes
-        enum EditMode {
-            case none
-            case individual
-            case brush
-        }
+        @State private var tempNumSamples: Double
+        @State private var tempNumAngles: Double
+        @State private var tempThreshold: Double
+        @State private var tempSlopeCoef: Double
+        @State private var tempeReferanceDistance: Double
         
-        // MARK: - Constants
-        private let pointRadius: CGFloat = 1
-        private let centerRadius: CGFloat = 12
-        
-        // MARK: - Computed Properties
-        private var imageSize: CGSize {
-            CGSize(width: image.size.width, height: image.size.height)
-        }
-        
-        private var displaySize: CGSize {
-            let maxWidth: CGFloat = 500
-            let maxHeight: CGFloat = 500
-            let aspectRatio = image.size.width / image.size.height
+        init(image: UIImage,
+             ringCenters: [Int: [(radius: Double, x: Double, y: Double)]],
+             isPresented: Binding<Bool>,
+             numSamples: Binding<Int>,
+             numAngles: Binding<Int>,
+             threshold: Binding<Double>,
+             slopeCoef: Binding<Double>,
+             referanceDistance: Binding<Double>,
+             onReprocess: @escaping () -> Void) {
+            self.image = image
+            self.ringCenters = ringCenters
+            self._isPresented = isPresented
+            self._numSamples = numSamples
+            self._numAngles = numAngles
+            self._threshold = threshold
+            self._slopeCoef = slopeCoef
+            self._referanceDistance = referanceDistance
+            self.onReprocess = onReprocess
             
-            if aspectRatio > 1 {
-                // Landscape
-                return CGSize(width: maxWidth, height: maxWidth / aspectRatio)
-            } else {
-                // Portrait or square
-                return CGSize(width: maxHeight * aspectRatio, height: maxHeight)
-            }
-        }
-        
-        // Convert all ring centers to CGPoints for display
-        private var allPoints: [(key: String, point: CGPoint, ringIndex: Int)] {
-            var points: [(key: String, point: CGPoint, ringIndex: Int)] = []
-            
-            for (ringIndex, centers) in ringCenters {
-                for (pointIndex, center) in centers.enumerated() {
-                    let key = "\(ringIndex)_\(pointIndex)"
-                    // Scale coordinates from image space to display space
-                    let scaledX = (center.x / image.size.width) * displaySize.width
-                    let scaledY = (center.y / image.size.height) * displaySize.height
-                    let point = CGPoint(x: scaledX, y: scaledY)
-                    points.append((key: key, point: point, ringIndex: ringIndex))
-                }
-            }
-            
-            return points
+            // Initialize temp values
+            self._tempNumSamples = State(initialValue: Double(numSamples.wrappedValue))
+            self._tempNumAngles = State(initialValue: Double(numAngles.wrappedValue))
+            self._tempThreshold = State(initialValue: Double(threshold.wrappedValue))
+            self._tempSlopeCoef = State(initialValue: Double(slopeCoef.wrappedValue))
+            self._tempeReferanceDistance = State(initialValue: Double(referanceDistance.wrappedValue))
         }
         
         var body: some View {
             NavigationView {
-                VStack(spacing: 16) {
-                    // Controls
-                    controlPanel
-                    
-                    // Main editing area
-                    ZStack {
-                        // Background image
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: displaySize.width, height: displaySize.height)
-                            .clipped()
+                Form {
+                    Section(header: Text("Processing Parameters")) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Number of Samples: \(Int(tempNumSamples))")
+                                .font(.headline)
+                            Text("Controls the radial sampling density")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Slider(value: $tempNumSamples, in: 100...1000, step: 50)
+                                .accentColor(.blue)
+                        }
+                        .padding(.vertical, 4)
                         
-                        // Zoom and pan container
-                        ZStack {
-                            // Center cross
-                            centerCross
-                            
-                            // Ring center points
-                            ForEach(allPoints, id: \.key) { item in
-                                pointView(
-                                    at: item.point,
-                                    key: item.key,
-                                    ringIndex: item.ringIndex
-                                )
-                            }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Number of Angles: \(Int(tempNumAngles))")
+                                .font(.headline)
+                            Text("Controls the angular sampling resolution")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Slider(value: $tempNumAngles, in: 72...720, step: 36)
+                                .accentColor(.green)
                         }
-                        .scaleEffect(scale)
-                        .offset(offset)
-                        .clipped()
+                        .padding(.vertical, 4)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Threshold: \(String(format: "%.2f", tempThreshold))")
+                                .font(.headline)
+                            Text("Pixel intensity threshold for detection")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Slider(value: $tempThreshold, in: 0.1...1.0, step: 0.05)
+                                .accentColor(.orange)
+                        }
+                        .padding(.vertical, 4)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Slope Coefficient: \(String(format: "%.2f", tempSlopeCoef))")
+                                .font(.headline)
+                            Text("Adjusts sensitivity to slope changes")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Slider(value: $tempSlopeCoef, in: 0.1...3.0, step: 0.1)
+                                .accentColor(.purple)
+                        }
+                        .padding(.vertical, 4)
                     }
-                    .frame(width: displaySize.width, height: displaySize.height)
-                    .background(Color.black.opacity(0.1))
-                    .cornerRadius(12)
-                    .shadow(radius: 4)
-                    .gesture(
-                        SimultaneousGesture(
-                            // Zoom gesture
-                            MagnificationGesture()
-                                .onChanged { value in
-                                    scale = max(0.5, min(3.0, value))
-                                },
-                            
-                            // Pan gesture
-                            DragGesture()
-                                .onChanged { value in
-                                    if editMode == .none {
-                                        offset = value.translation
-                                    }
-                                }
-                        )
-                    )
                     
-                    // Helper functions panel
-                    helperPanel
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Distance Between Rings: \(Int(tempeReferanceDistance))")
+                            .font(.headline)
+                        Text("Controls the Referance Distance Between Rings for Comparison to perfect Sphere")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Slider(value: $tempeReferanceDistance, in: 0...20, step: 1)
+                            .accentColor(.blue)
+                    }
+                    .padding(.vertical, 4)
                     
-                    // Stats
-                    statsPanel
+                    Section(header: Text("Current Analysis")) {
+                        HStack {
+                            Text("Detected Rings:")
+                            Spacer()
+                            Text("\(ringCenters.values.flatMap { $0 }.count)")
+                                .font(.body.monospacedDigit())
+                                .foregroundColor(.blue)
+                        }
+                        
+                        HStack {
+                            Text("Angles with Data:")
+                            Spacer()
+                            Text("\(ringCenters.keys.count)")
+                                .font(.body.monospacedDigit())
+                                .foregroundColor(.green)
+                        }
+                    }
                     
-                    Spacer()
+                    Section {
+                        Button(action: applyChanges) {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Apply Changes & Reprocess")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(hasNoChanges)
+                        
+                        Button(action: resetToDefaults) {
+                            HStack {
+                                Image(systemName: "arrow.uturn.backward")
+                                Text("Reset to Defaults")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
-                .padding()
-                .navigationTitle("Point Editor")
+                .navigationTitle("Processing Settings")
                 .navigationBarTitleDisplayMode(.inline)
-                .navigationBarItems(
-                    leading: Button("Cancel") {
-                        // Restore from undo stack if available
-                        if !undoStack.isEmpty {
-                            ringCenters = undoStack.first!
-                        }
-                        isPresented = false
-                    },
-                    trailing: Button("Done") {
-                        save()
-                        isPresented = false
-                    }
-                    .fontWeight(.semibold)
-                )
-            }
-            .onAppear {
-                setupInitialCenter()
-            }
-        }
-        
-        // MARK: - Control Panel
-        private var controlPanel: some View {
-            VStack {
-                HStack {
-                    Button("Individual") {
-                        editMode = editMode == .individual ? .none : .individual
-                    }
-                    .foregroundColor(editMode == .individual ? .white : .blue)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(editMode == .individual ? Color.blue : Color.clear)
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.blue, lineWidth: 1)
-                    )
-                    
-                    Button("Brush") {
-                        editMode = editMode == .brush ? .none : .brush
-                    }
-                    .foregroundColor(editMode == .brush ? .white : .red)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(editMode == .brush ? Color.red : Color.clear)
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.red, lineWidth: 1)
-                    )
-                    
-                    Spacer()
-                }
-                
-                Text("Mode: \(editMode == .none ? "Pan/Zoom" : editMode == .individual ? "Individual Delete" : "Brush Delete")")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
-        }
-        
-        // MARK: - Center Cross
-        private var centerCross: some View {
-            ZStack {
-                // Horizontal line
-                Rectangle()
-                    .fill(Color.yellow)
-                    .frame(width: 20, height: 2)
-                
-                // Vertical line
-                Rectangle()
-                    .fill(Color.yellow)
-                    .frame(width: 2, height: 20)
-                
-                // Center dot
-                Circle()
-                    .fill(Color.yellow)
-                    .frame(width: centerRadius, height: centerRadius)
-            }
-            .position(centerPoint)
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        isDraggingCenter = true
-                        centerPoint = value.location
-                    }
-                    .onEnded { _ in
-                        isDraggingCenter = false
-                        reProcessData()
-                    }
-            )
-        }
-        
-        // MARK: - Point View
-        private func pointView(at point: CGPoint, key: String, ringIndex: Int) -> some View {
-            Circle()
-                .fill(draggedPointKey == key ? Color.red.opacity(0.8) : colorForRing(ringIndex))
-                .frame(width: pointRadius * 2, height: pointRadius * 2)
-                .position(point)
-                .scaleEffect(draggedPointKey == key ? 1.5 : 1.0)
-                .animation(.easeInOut(duration: 0.2), value: draggedPointKey == key)
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in
-                            if editMode == .individual {
-                                draggedPointKey = key
-                            } else if editMode == .brush {
-                                deletePoint(key: key)
-                            }
-                        }
-                        .onEnded { _ in
-                            if editMode == .individual && draggedPointKey == key {
-                                // Long press delete
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    if draggedPointKey == key {
-                                        deletePoint(key: key)
-                                        draggedPointKey = nil
-                                    }
-                                }
-                            }
-                            draggedPointKey = nil
-                        }
-                )
-        }
-        
-        // MARK: - Helper Panel
-        private var helperPanel: some View {
-            HStack {
-                Button("Undo") {
-                    undo()
-                }
-                .disabled(undoStack.isEmpty)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(undoStack.isEmpty ? Color.gray.opacity(0.2) : Color.blue.opacity(0.1))
-                .cornerRadius(6)
-                
-                Spacer()
-                
-                Button("Auto Clean") {
-                    autoClean()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.green.opacity(0.1))
-                .cornerRadius(6)
-                
-                Spacer()
-                
-                Button("Reset Center") {
-                    resetCenter()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.orange.opacity(0.1))
-                .cornerRadius(6)
-            }
-        }
-        
-        // MARK: - Stats Panel
-        private var statsPanel: some View {
-            VStack(spacing: 8) {
-                HStack {
-                    let totalPoints = ringCenters.values.reduce(0) { $0 + $1.count }
-                    Text("Total Points: \(totalPoints)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                    
-                    Spacer()
-                    
-                    Text("Rings: \(ringCenters.keys.count)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                }
-                
-                Text("Center: (\(Int(centerPoint.x)), \(Int(centerPoint.y)))")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-        }
-        
-        // MARK: - Helper Functions
-        
-        private func setupInitialCenter() {
-            centerPoint = CGPoint(x: displaySize.width / 2, y: displaySize.height / 2)
-            saveToUndoStack()
-        }
-        
-        private func colorForRing(_ ringIndex: Int) -> Color {
-            let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .cyan]
-            return colors[ringIndex % colors.count]
-        }
-        
-        private func deletePoint(key: String) {
-            let components = key.split(separator: "_")
-            guard components.count == 2,
-                  let ringIndex = Int(components[0]),
-                  let pointIndex = Int(components[1]) else { return }
-            
-            saveToUndoStack()
-            
-            if var centers = ringCenters[ringIndex] {
-                centers.remove(at: pointIndex)
-                if centers.isEmpty {
-                    ringCenters.removeValue(forKey: ringIndex)
-                } else {
-                    ringCenters[ringIndex] = centers
-                }
-            }
-        }
-        
-        private func saveToUndoStack() {
-            undoStack.append(ringCenters)
-            if undoStack.count > 20 { // Limit undo stack
-                undoStack.removeFirst()
-            }
-        }
-        
-        private func undo() {
-            guard !undoStack.isEmpty else { return }
-            ringCenters = undoStack.removeLast()
-        }
-        
-        private func resetCenter() {
-            centerPoint = CGPoint(x: displaySize.width / 2, y: displaySize.height / 2)
-            reProcessData()
-        }
-        
-        private func reProcessData() {
-            // Convert display center back to image coordinates
-            let imageCenterX = (centerPoint.x / displaySize.width) * image.size.width
-            let imageCenterY = (centerPoint.y / displaySize.height) * image.size.height
-            
-            print("Re-processing data with new center: (\(imageCenterX), \(imageCenterY)) in image coordinates")
-            // Here you would trigger your re-processing logic
-        }
-        
-        private func autoClean() {
-            saveToUndoStack()
-            
-            let minimumDistance: Double = 10.0 // Minimum distance in image coordinates
-            var cleanedRingCenters: [Int: [(radius: Double, x: Double, y: Double)]] = [:]
-            
-            for (ringIndex, centers) in ringCenters {
-                var cleanedCenters: [(radius: Double, x: Double, y: Double)] = []
-                
-                // Remove points that are too close together
-                for center in centers {
-                    var tooClose = false
-                    for existingCenter in cleanedCenters {
-                        let distance = sqrt(pow(center.x - existingCenter.x, 2) + pow(center.y - existingCenter.y, 2))
-                        if distance < minimumDistance {
-                            tooClose = true
-                            break
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            isPresented = false
                         }
                     }
-                    if !tooClose {
-                        cleanedCenters.append(center)
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            applyChanges()
+                            isPresented = false
+                        }
+                        .fontWeight(.semibold)
                     }
                 }
-                
-                if !cleanedCenters.isEmpty {
-                    cleanedRingCenters[ringIndex] = cleanedCenters
-                }
             }
-            
-            ringCenters = cleanedRingCenters
         }
         
-        private func save() {
-            print("Saving ring centers:")
-            for (ringIndex, centers) in ringCenters.sorted(by: { $0.key < $1.key }) {
-                print("Ring \(ringIndex): \(centers.count) points")
-            }
-            
-            let imageCenterX = (centerPoint.x / displaySize.width) * image.size.width
-            let imageCenterY = (centerPoint.y / displaySize.height) * image.size.height
-            print("Center in image coordinates: (\(imageCenterX), \(imageCenterY))")
+        private var hasNoChanges: Bool {
+            Int(tempNumSamples) == numSamples &&
+            Int(tempNumAngles) == numAngles &&
+            abs(tempThreshold - threshold) < 0.001 &&
+            abs(tempSlopeCoef - slopeCoef) < 0.001
         }
-    }
-    
-    private func adjustNumSamples(numSamples: Int) {
         
+        private func applyChanges() {
+            numSamples = Int(tempNumSamples)
+            numAngles = Int(tempNumAngles)
+            threshold = tempThreshold
+            slopeCoef = tempSlopeCoef
+            
+            // Trigger reprocessing
+            onReprocess()
+        }
+        
+        private func resetToDefaults() {
+            tempNumSamples = 500
+            tempNumAngles = 360
+            tempThreshold = 0.5
+            tempSlopeCoef = 1.0
+        }
     }
 }
-
